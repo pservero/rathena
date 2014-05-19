@@ -478,6 +478,10 @@ enum _sp {
 	SP_IGNORE_DEF_CLASS, SP_DEF_RATIO_ATK_CLASS, SP_ADDCLASS, SP_SUBCLASS, SP_MAGIC_ADDCLASS, //2062-2066
 	SP_WEAPON_COMA_CLASS, SP_IGNORE_MDEF_CLASS_RATE, SP_EXP_ADDCLASS, SP_ADD_CLASS_DROP_ITEM, //2067-2070
 	SP_ADD_CLASS_DROP_ITEMGROUP, SP_ADDMAXWEIGHT  // 2071-2072
+
+	// Custom Bonuses [PServeRO]
+	, SP_ONESHOOTONEKILL_CLASS = 2084, SP_ONESHOOTONEKILL_RACE, SP_ONESHOOTONEKILL_MOB, SP_SUB_ONESHOOTONEKILL
+	, SP_SKILL_NO_REQUIRE = 2089, SP_SKILL_NO_REQUIRE_ITEM, SP_NO_REQUIRE_AMMO
 };
 
 enum _look {
@@ -577,8 +581,15 @@ struct s_skill_damage {
 		other;
 	uint8 caster;	/* caster type */
 };
-#define MAX_MAP_SKILL_MODIFIER 5
 #endif
+#define MAX_MAP_SKILL_MODIFIER 20
+
+/// [Cydh]
+/// Struct of skill maxcount on each map
+struct s_map_skill_adjust {
+	uint16 skill_id;
+	int val[10];
+};
 
 struct questinfo {
 	struct npc_data *nd;
@@ -658,9 +669,19 @@ struct map_data {
 		unsigned nomineeffect : 1; //allow /mineeffect
 		unsigned nolockon : 1;
 		unsigned notomb : 1;
+		// Skill map adjustments [Cydh]
+		unsigned skill_maxcount : 1;
+		unsigned skill_cast : 1;
+		unsigned skill_fixed_cast : 1;
+		unsigned skill_actdelay : 1;
+		unsigned skill_walkdelay : 1;
+		unsigned skill_duration : 1;
+		unsigned skill_duration2 : 1;
+		unsigned skill_cooldown : 1;
 #ifdef ADJUST_SKILL_DAMAGE
 		unsigned skill_damage : 1;
 #endif
+		unsigned atk_rate : 1; // Global Damage adjustment. [Cydh]
 	} flag;
 	struct point save;
 	struct npc_data *npc[MAX_NPC_PER_MAP];
@@ -680,10 +701,34 @@ struct map_data {
 #ifdef ADJUST_SKILL_DAMAGE
 		struct s_skill_damage damage;
 #endif
+		// Skill map adjustments [Cydh]
+		struct s_map_skill_adjust
+			skill_maxcount[MAX_MAP_SKILL_MODIFIER],
+			skill_cast[MAX_MAP_SKILL_MODIFIER],
+			skill_fixed_cast[MAX_MAP_SKILL_MODIFIER],
+			skill_actdelay[MAX_MAP_SKILL_MODIFIER],
+			skill_walkdelay[MAX_MAP_SKILL_MODIFIER],
+			skill_duration[MAX_MAP_SKILL_MODIFIER],
+			skill_duration2[MAX_MAP_SKILL_MODIFIER],
+			skill_cooldown[MAX_MAP_SKILL_MODIFIER];
+		//Global Damage Adjustment [Cydh]
+		uint16 atk_short_damage_rate,
+			atk_long_damage_rate,
+			atk_weapon_damage_rate,
+			atk_magic_damage_rate,
+			atk_misc_damage_rate,
+			atk_attacker;
 	} adjust;
 #ifdef ADJUST_SKILL_DAMAGE
 	struct s_skill_damage skill_damage[MAX_MAP_SKILL_MODIFIER];
 #endif
+
+#ifdef DISPLAY_MAP_DESC
+	// [Cydh]
+	char desc[CHAT_SIZE_MAX];
+	unsigned long desc_color;
+#endif
+
 	/**
 	 * Ice wall reference counter for bugreport:3574
 	 * - since there are a thounsand mobs out there in a lot of maps checking on,
@@ -937,5 +982,9 @@ extern char vendings_db[32];
 extern char vending_items_db[32];
 
 void do_shutdown(void);
+
+#ifdef DISPLAY_MAP_DESC
+void map_load_name_desc(void);
+#endif
 
 #endif /* _MAP_H_ */

@@ -99,6 +99,10 @@
 	#error "Config of MIN_STORAGE is invalid"
 #endif
 
+/** Some Custom Source Configs by PServeRO **/
+/// Comment this to doesn't display map description when player changes map
+#define DISPLAY_MAP_DESC
+
 /**
  * No settings past this point
  **/

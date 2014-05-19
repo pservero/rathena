@@ -1052,6 +1052,8 @@ bool pc_authok(struct map_session_data *sd, int login_id2, time_t expiration_tim
 	sd->canskill_tick = tick;
 	sd->cansendmail_tick = tick;
 
+	sd->canwarp_tick = tick; // Warp on battle [Cydh]
+
 	for(i = 0; i < MAX_SPIRITBALL; i++)
 		sd->spirit_timer[i] = INVALID_TIMER;
 	for(i = 0; i < ARRAYLENGTH(sd->autobonus); i++)
@@ -2764,6 +2766,41 @@ int pc_bonus(struct map_session_data *sd,int type,int val)
 			if (sd->state.lr_flag != 2)
 				sd->max_weight += val;
 			break;
+
+		// Custom bonuses [PServeRO]
+		case SP_SUB_ONESHOOTONEKILL: // [Cydh]
+			if (sd->state.lr_flag != 2) {
+				sd->bonus.sub_oneshootonekill += val;
+				cap_value(sd->bonus.sub_oneshootonekill,-10000,10000);
+			}
+			break;
+		case SP_SKILL_NO_REQUIRE: // [Cydh]
+			if (sd->state.lr_flag != 2)
+				sd->bonus.skill_no_require |= val;
+			break;
+		case SP_SKILL_NO_REQUIRE_ITEM: //[Cydh]
+			if (sd->state.lr_flag != 2) {
+				if (!itemdb_exists(val)) {
+					ShowWarning("pc_bonus: SP_SKILL_NO_REQUIRE_ITEM: Invalid item with ID %d. Skip bonus.\n", val);
+					break;
+				}
+				else {
+					uint8 i;
+					ARR_FIND(0, ARRAYLENGTH(sd->skill_no_require_item), i, !sd->skill_no_require_item[i]);
+					if (i < ARRAYLENGTH(sd->skill_no_require_item)) {
+						sd->skill_no_require_item[i] = val;
+						sd->special_state.skill_no_require_item |= 1;
+					}
+					else
+						ShowError("pc_bonus: SP_SKILL_NO_REQUIRE_ITEM: Can't add more data. Limit is %d\n", ARRAYLENGTH(sd->skill_no_require_item));
+				}
+			}
+			break;
+		case SP_NO_REQUIRE_AMMO: //[Cydh]
+			if (sd->state.lr_flag != 2)
+				sd->special_state.no_require_ammo = 1;
+			break;
+
 		default:
 			ShowWarning("pc_bonus: unknown type %d %d !\n",type,val);
 			break;
@@ -3408,6 +3445,84 @@ int pc_bonus2(struct map_session_data *sd,int type,int type2,int val)
 			sd->skillusesp[i].val = val;
 		}
 		break;
+
+	// Custom bonuses [PServeRO]
+	case SP_ONESHOOTONEKILL_CLASS: // [Cydh]
+		if(sd->state.lr_flag == 2)
+			break;
+		if (type2 <= CLASS_NONE || type2 > CLASS_MAX) {
+			ShowError("pc_bonus2: SP_ONESHOOTONEKILL_CLASS: Invalid class %d\n", type2);
+			break;
+		}
+		sd->oneshootonekill_class[type2] += val;
+		break;
+	case SP_ONESHOOTONEKILL_RACE: // [Cydh]
+		if(sd->state.lr_flag == 2)
+			break;
+		if (type2 <= RC_NONE_ || type2 > RC_MAX) {
+			ShowError("pc_bonus2: SP_ONESHOOTONEKILL_RACE: Invalid race %d\n", type2);
+			break;
+		}
+		sd->oneshootonekill_race[type2] += val;
+		break;
+	case SP_ONESHOOTONEKILL_MOB: // [Cydh]
+		if(sd->state.lr_flag == 2)
+			break;
+		if (!mob_db(type2)) {
+			ShowError("pc_bonus2: SP_ONESHOOTONEKILL_MOB: Invalid monster with id %d\n", type2);
+			break;
+		} else {		
+			uint8 i, len = ARRAYLENGTH(sd->oneshootonekill_mob);
+			bool isAdded = false;
+			// Stack for same type
+			for (i = 0; i < len; i++) {
+				if (sd->oneshootonekill_mob[i].mob_id == type2) {
+					sd->oneshootonekill_mob[i].rate += val;
+					isAdded = true;
+					cap_value(sd->oneshootonekill_mob[i].rate, -10000, 10000);
+					break;
+				}
+			}
+			if (isAdded)
+				break;
+			// New entry
+			ARR_FIND(0, len, i, !sd->oneshootonekill_mob[i].mob_id);
+			if (i >= len) {
+				ShowError("pc_bonus2: SP_ONESHOOTONEKILL_MOB: Can't add more value.\n");
+				break;
+			}
+			sd->oneshootonekill_mob[i].mob_id = type2;
+			sd->oneshootonekill_mob[i].rate = val;
+			cap_value(sd->oneshootonekill_mob[i].rate, -10000, 10000);
+		}
+		break;
+	case SP_SKILL_NO_REQUIRE: // [Cydh]
+		if (sd->state.lr_flag == 2) {
+			break;
+		} else {
+			uint8 i, len = ARRAYLENGTH(sd->skill_no_require);
+			bool isAdded = false;
+			for (i = 0; i < len; i++) {
+				if (sd->skill_no_require[i].skill_id == type2) {
+					sd->skill_no_require[i].state |= val;
+					sd->special_state.skill_no_require |= 1;
+					isAdded = true;
+					break;
+				}
+			}
+			if (isAdded)
+				break;
+			ARR_FIND(0, len, i, !sd->skill_no_require[i].skill_id);
+			if (i < len) {
+				sd->skill_no_require[i].skill_id = type2;
+				sd->skill_no_require[i].state = val;
+				sd->special_state.skill_no_require |= 1;
+			} else {
+				ShowError("pc_bonus2: SP_SKILL_NO_REQUIRE: Limit reached already (%d).\n", ARRAYLENGTH(sd->skill_no_require));
+			}
+		}
+		break;
+
 	default:
 		ShowWarning("pc_bonus2: unknown type %d %d %d!\n",type,type2,val);
 		break;
@@ -5201,8 +5316,7 @@ int pc_get_skillcooldown(struct map_session_data *sd, int id, int lv) {
 	int cooldownlen = ARRAYLENGTH(sd->skillcooldown);
 	
 	if (!idx) return 0;
-	if (skill_db[idx].cooldown[lv - 1])
-		cooldown = skill_db[idx].cooldown[lv - 1];
+	cooldown = skill_get_cooldown2(id,lv,sd->bl.m);
 
 	ARR_FIND(0, cooldownlen, i, sd->skillcooldown[i].id == id);
 	if(i<cooldownlen){
@@ -6897,6 +7011,7 @@ void pc_damage(struct map_session_data *sd,struct block_list *src,unsigned int h
 		elemental_set_target(sd,src);
 
 	sd->canlog_tick = gettick();
+	sd->canwarp_tick = gettick() + battle_config.prevent_warponbattle;	// Warp on battle [Cydh]
 }
 
 int pc_close_npc_timer(int tid, unsigned int tick, int id, intptr_t data)
@@ -7253,6 +7368,11 @@ int pc_dead(struct map_session_data *sd,struct block_list *src)
 			return 1|8;
 		}
 	}
+
+	// Warp on battle [Cydh]
+	// When player is dead, just give the half-delay
+	if (battle_config.prevent_warponbattle)
+		sd->canwarp_tick = gettick() + (battle_config.prevent_warponbattle/2);
 
 	//Reset "can log out" tick.
 	if( battle_config.prevent_logout )

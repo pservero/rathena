@@ -396,3 +396,51 @@ in '/conf/channels.conf'.
 Disables MVP tombs from appearing on a map.
 
 ---------------------------------------
+
+*skill_maxcount	{<skill_name>,<values>}
+
+Adjusts maximum count of skill at this map.
+
+---------------------------------------
+
+*skill_cast	{<skill_name>,<values>}
+
+Adjusts cast time of skill at this map.
+
+---------------------------------------
+
+*skill_fixed_cast	{<skill_name>,<values>}
+
+Adjusts fixed cast time of skill at this map.
+
+---------------------------------------
+
+*skill_actdelay	{<skill_name>,<values>}
+
+Adjusts act delay time of skill at this map.
+
+---------------------------------------
+
+*skill_walkdelay	{<skill_name>,<values>}
+
+Adjusts walk delay time of skill at this map.
+
+---------------------------------------
+
+*skill_duration	{<skill_name>,<values>}
+
+Adjusts 'time' (a.k.a effect/buff duration) of skill at this map.
+
+---------------------------------------
+
+*skill_duration2	{<skill_name>,<values>}
+
+Adjusts 'time2' (a.k.a effect/buff duration2) of skill at this map.
+
+---------------------------------------
+
+*skill_cooldown	{<skill_name>,<values>}
+
+Adjusts cooldown time of skill at this map.
+
+---------------------------------------

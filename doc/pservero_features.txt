@@ -1,0 +1,126 @@
+======== List of PServeRO Features =================================
+
+Website : http://pservero.com
+Author  : Cydh
+Email   : house.bad@gmail.com
+
+This file contains some feature summaries of PServeRO.
+
+- Custom configs will be placed in:
+    conf/battle/pservero.conf
+- Custom scripts will be placed in:
+    npc/scripts_pservero.conf
+
+====================================================================
+
+Custom Bonuses
+--------------
+There are some custom bonuses that provided by PServeRO:
+- bOneShootOneKillClass
+- bOneShootOneKillRace
+- bOneShootOneKillMonster
+- bSubOneShootOneKill
+- bSkillNoRequire
+- bSkillNoRequireItem
+- bNoRequireAmmo
+
+See doc/item_bonus.txt for bonus usages.
+
+--------------------------------------------------------------------
+
+Custom Commands
+---------------
+There are some custom commands that provided by PServeRO:
+- @gstoreall
+
+See doc/atcommands.txt for command usages.
+
+--------------------------------------------------------------------
+
+Global Damage Adjustment
+------------------------
+Adjust global damage just by changing config values for damage rate
+of short, long weapon, magic, and misc attack. This feature also
+provides 'atk_rate' mapflag, to change damage rate in spesific map.
+
+See conf/battle/pservero.conf for config usages.
+See doc/mapflags.txt for mapflag usages.
+
+--------------------------------------------------------------------
+
+Skill Map Adjustments
+---------------------
+This feature allows to change skill configuration by using some
+custom mapflags for adjusting values of specified skill in specified
+map, such:
+- skill_maxcount
+- skill_cast
+- skill_fixed_cast
+- skill_actdelay
+- skill_walkdelay
+- skill_duration
+- skill_duration2
+- skill_cooldown
+Those mapflags will overwrite the original values.
+
+See doc/mapflags.txt for mapflag usages.
+
+--------------------------------------------------------------------
+
+Head Shoot Bonus
+----------------
+Custom bonus that allows player deals "one shoot, one kill!"
+When it's done, it will triggers "OnPCOneShootEvent".
+
+See doc/script_commands.txt on 'Labels' section for label
+usages.
+
+--------------------------------------------------------------------
+
+Monster Script's Flag
+---------------------
+Custom flags that are used for 'monster' or 'areamonster' script.
+The flag allows to disable some original function of 'monster death'
+activity, such prevents to give EXP, Zeny, Item drops, also prevents
+it to doesn't trigger 'OnNPCKillEvent' label.
+
+This maybe useful if you want 'event monsters' don't make dirty your
+city instead using 'nomobloot' or 'nomvploot' which the effect is
+for a whole map.
+
+See doc/script_commands.txt on *monster and *areamonster section
+for script usages.
+
+--------------------------------------------------------------------
+
+Skill No 'canlog' Database
+--------------------------
+This custom skill database holds some skills that won't triggers
+'canlog_tick' of player which if it triggered, player must wait 10
+secs (or see 'prevent_logout' config) to logs out.
+
+See db/skill_no_canlog_tick.txt for database usages.
+
+--------------------------------------------------------------------
+
+Warp Delay on Battle
+--------------------
+This mode will prevents player to being warped immediately while
+attacking, receiving damage, after using skill, and after death.
+Working just like 'prevent_logout' but for warping by atcommand,
+respawn after death, or recalled by atcommand or Emergency Call.
+
+See conf/battle/pservero.conf for config usages.
+
+--------------------------------------------------------------------
+
+Map Description Announcer
+-------------------------
+Announce to player about map description/name when player's map is
+changed. To enable, #define DISPLAY_MAP_DESC on src/config/core.h
+must be UNCOMMENTED.
+
+See conf/battle/pservero.conf for config usages.
+See db/map_desc.txt for map description.
+
+--------------------------------------------------------------------

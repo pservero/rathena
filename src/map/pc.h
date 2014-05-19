@@ -149,6 +149,10 @@ enum npc_timeout_type {
 	NPCT_WAIT  = 2,
 };
 
+struct s_oneshootonekill { // [Cydh]
+	uint16 type, rate;
+};
+
 struct map_session_data {
 	struct block_list bl;
 	struct unit_data ud;
@@ -222,6 +226,9 @@ struct map_session_data {
 		unsigned int perfect_hiding : 1; // [Valaris]
 		unsigned int no_knockback : 1;
 		unsigned int bonus_coma : 1;
+		unsigned int no_require_ammo : 1; // [Cydh]
+		unsigned int skill_no_require : 1; // indicates if sd->skill_no_require struct array has entry [Cydh]
+		unsigned int skill_no_require_item : 1; // indicates if sd->bonus.no_require_item array has entry [Cydh]
 	} special_state;
 	int login_id1, login_id2;
 	unsigned short class_;	//This is the internal job ID used by the map server to simplify comparisons/queries/etc. [Skotlex]
@@ -283,6 +290,7 @@ struct map_session_data {
 	unsigned int canskill_tick; // used to prevent abuse from no-delay ACT files
 	unsigned int cansendmail_tick; // [Mail System Flood Protection]
 	unsigned int ks_floodprotect_tick; // [Kill Steal Protection]
+	unsigned int canwarp_tick;	//delay for player when warp after attacking, receving damage, or using skill.	//warp on battle
 
 	struct s_item_delay {
 		short nameid;
@@ -326,6 +334,8 @@ struct map_session_data {
 	short sp_gain_race[RC_MAX];
 	short sp_gain_race_attack[RC_MAX];
 	short hp_gain_race_attack[RC_MAX];
+	short oneshootonekill_class[CLASS_MAX], oneshootonekill_race[RC_MAX]; // [Cydh]
+	uint16 skill_no_require_item[MAX_PC_BONUS]; // [Cydh]
 	// zeroed arrays end here.
 	// zeroed structures start here
 	struct s_autospell autospell[15], autospell2[15], autospell3[15];
@@ -357,6 +367,13 @@ struct map_session_data {
 		short value;
 		int rate, tick;
 	} def_set_race[RC_MAX], mdef_set_race[RC_MAX];
+	struct s_oneshootonekill_mob { // [Cydh]
+		uint16 mob_id;
+		short rate;
+	} oneshootonekill_mob[MAX_PC_BONUS];
+	struct s_skill_no_require { // [Cydh]
+		uint16 skill_id, state;
+	} skill_no_require[MAX_PC_BONUS];
 	// zeroed structures end here
 	// manually zeroed structures start here.
 	struct s_autobonus autobonus[MAX_PC_BONUS], autobonus2[MAX_PC_BONUS], autobonus3[MAX_PC_BONUS]; //Auto script on attack, when attacked, on skill usage
@@ -401,6 +418,9 @@ struct map_session_data {
 		int add_fixcast,add_varcast;
 		int ematk; // matk bonus from equipment
 		int eatk; // atk bonus from equipment
+
+		int sub_oneshootonekill; // [Cydh]
+		uint16 skill_no_require; // [Cydh]
 	} bonus;
 
 	// zeroed vars end here.

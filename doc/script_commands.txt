@@ -983,6 +983,11 @@ Only the special labels which are not associated with any script command are
 listed here. There are other kinds of labels which may be triggered in a similar 
 manner, but they are described with their associated commands.
 
+OnPCOneShootEvent:
+
+This special label triggered when a player deals instant kill to opponent by
+OneShootOneKill bonus effect. 'killedrid' will store the opponent's GID.
+
 On<label name>:
 
 These special labels are used with Mob scripts mostly, and script commands
@@ -5500,8 +5505,8 @@ Examples:
 ==================================
 ---------------------------------------
 
-*monster     "<map name>",<x>,<y>,"<name to show>",<mob id>,<amount>{,"<event label>",<size>,<ai>};
-*areamonster "<map name>",<x1>,<y1>,<x2>,<y2>,"<name to show>",<mob id>,<amount>{,"<event label>",<size>,<ai>};
+*monster     "<map name>",<x>,<y>,"<name to show>",<mob id>,<amount>{,"<event label>",<size>,<ai>,<flag>};
+*areamonster "<map name>",<x1>,<y1>,<x2>,<y2>,"<name to show>",<mob id>,<amount>{,"<event label>",<size>,<ai>,<flag>};
 
 This command will spawn a monster on the specified coordinates on the specified 
 map. If the script is invoked by a character, a special map name, "this", will 
@@ -5534,6 +5539,14 @@ attached at this execution will be the RID of the killing character.
 	2 = sphere (Alchemist skill)
 	3 = flora (Alchemist skill)
 	4 = zanzou (Kagerou/Oboro skill)
+
+<flag> can be (bitmask):
+	1  = Gives 1 Base EXP when killed
+	2  = Gives 1 Job EXP when killed
+	4  = Gives 0 Zeny when killed and zeny from monster is enabled
+	8  = Drops nothing (except looted items)
+	16 = Doesn't count as kill (won't trigger OnNPCKillEvent)
+	32 = Force as normal monster (makes gives no MVP bonuses)
 
     monster "place",60,100,"Poring",1002,1,"NPCNAME::OnLabel";
 

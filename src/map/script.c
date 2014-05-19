@@ -257,6 +257,7 @@ struct Script_Config script_config = {
 	"OnPCBaseLvUpEvent", //baselvup_event_name
 	"OnPCJobLvUpEvent", //joblvup_event_name
 	"OnPCStatCalcEvent", //stat_calc_event_name
+	"OnPCOneShootEvent", //oneshootonekill_event_name [Cydh]
 	"OnTouch_",	//ontouch_name (runs on first visible char to enter area, picks another char if the first char leaves)
 	"OnTouch",	//ontouch2_name (run whenever a char walks into the OnTouch area)
 };
@@ -423,6 +424,18 @@ enum {
 	MF_NOLOCKON,
 	MF_NOTOMB,
 	MF_SKILL_DAMAGE	//60
+
+	,
+	// PServeRO http://pservero.com
+	MF_SKILL_MAXCOUNT = 70,
+	MF_SKILL_CAST,
+	MF_SKILL_FIXEDCAST,
+	MF_SKILL_ACTDELAY,
+	MF_SKILL_WALKDELAY,
+	MF_SKILL_DURATION,
+	MF_SKILL_DURATION2,
+	MF_SKILL_COOLDOWN,
+	MF_ATK_RATE,
 };
 
 const char* script_op2name(int op)
@@ -8233,6 +8246,7 @@ BUILDIN_FUNC(bonus)
 		case SP_VARCASTRATE:
 		case SP_FIXCASTRATE:
 		case SP_SKILL_USE_SP:
+		case SP_SKILL_NO_REQUIRE:
 			// these bonuses support skill names
 			data = script_getdata(st, 3);
 			get_val(st, data); // Convert into value in case of a variable
@@ -9224,6 +9238,7 @@ BUILDIN_FUNC(monster)
 	const char* event	= "";
 	unsigned int size	= SZ_SMALL;
 	unsigned int ai		= AI_NONE;
+	uint8 flag = 0;
 
 	struct map_session_data* sd;
 	int16 m;
@@ -9250,6 +9265,9 @@ BUILDIN_FUNC(monster)
 		}
 	}
 
+	if (script_hasdata(st, 11))
+		flag = script_getnum(st, 11);
+
 	if (class_ >= 0 && !mobdb_checkid(class_)) {
 		ShowWarning("buildin_monster: Attempted to spawn non-existing monster class %d\n", class_);
 		return 1;
@@ -9263,7 +9281,7 @@ BUILDIN_FUNC(monster)
 		m = map_mapname2mapid(mapn);
 
 	for(i=0; i<amount; i++){ //not optimised
-		int mobid = mob_once_spawn(sd, m, x, y, str, class_, 1, event, size, ai);
+		int mobid = mob_once_spawn(sd, m, x, y, str, class_, 1, event, size, ai, flag);
 		if(mobid) mapreg_setreg(reference_uid(add_str("$@mobid"), i),mobid);
 	}
 	return SCRIPT_CMD_SUCCESS;
@@ -9319,6 +9337,7 @@ BUILDIN_FUNC(areamonster)
 	const char* event	= "";
 	unsigned int size	= SZ_SMALL;
 	unsigned int ai		= AI_NONE;
+	uint8 flag = 0;
 
 	struct map_session_data* sd;
 	int16 m;
@@ -9344,6 +9363,9 @@ BUILDIN_FUNC(areamonster)
 		}
 	}
 
+	if (script_hasdata(st, 13))
+		flag = script_getnum(st, 13);
+
 	sd = map_id2sd(st->rid);
 
 	if (sd && strcmp(mapn, "this") == 0)
@@ -9351,7 +9373,7 @@ BUILDIN_FUNC(areamonster)
 	else
 		m = map_mapname2mapid(mapn);
 
-	mob_once_spawn_area(sd, m, x0, y0, x1, y1, str, class_, amount, event, size, ai);
+	mob_once_spawn_area(sd, m, x0, y0, x1, y1, str, class_, amount, event, size, ai, flag);
 	return SCRIPT_CMD_SUCCESS;
 }
 /*==========================================
@@ -11249,6 +11271,33 @@ BUILDIN_FUNC(getmapflag)
 					script_pushint(st,ret_val); break;
 				} break;
 #endif
+			case MF_SKILL_MAXCOUNT:		script_pushint(st,map[m].flag.skill_maxcount); break;
+			case MF_SKILL_CAST:			script_pushint(st,map[m].flag.skill_cast); break;
+			case MF_SKILL_FIXEDCAST:	script_pushint(st,map[m].flag.skill_fixed_cast); break;
+			case MF_SKILL_ACTDELAY:		script_pushint(st,map[m].flag.skill_actdelay); break;
+			case MF_SKILL_WALKDELAY:	script_pushint(st,map[m].flag.skill_walkdelay); break;
+			case MF_SKILL_DURATION:		script_pushint(st,map[m].flag.skill_duration); break;
+			case MF_SKILL_DURATION2:	script_pushint(st,map[m].flag.skill_duration2); break;
+			case MF_SKILL_COOLDOWN:		script_pushint(st,map[m].flag.skill_cooldown); break;
+			case MF_ATK_RATE:
+				{
+					int ret_val = 0, type = 0;
+					FETCH(4,type);
+					if (type) {
+						switch (type) {
+							case 1: ret_val = map[m].adjust.atk_attacker; break;
+							case 2: ret_val = map[m].adjust.atk_short_damage_rate; break;
+							case 3: ret_val = map[m].adjust.atk_long_damage_rate; break;
+							case 4: ret_val = map[m].adjust.atk_weapon_damage_rate; break;
+							case 5: ret_val = map[m].adjust.atk_magic_damage_rate; break;
+							case 6: ret_val = map[m].adjust.atk_misc_damage_rate; break;
+							default: ret_val = map[m].flag.atk_rate; break;
+						}
+						break;
+					}
+					script_pushint(st,ret_val);
+					break;
+				}
 		}
 	}
 	return SCRIPT_CMD_SUCCESS;
@@ -11371,6 +11420,31 @@ BUILDIN_FUNC(setmapflag)
 					map[m].flag.skill_damage = 1;
 				} break;
 #endif
+			case MF_ATK_RATE:
+				{
+					int type=0;
+					FETCH(5,type);
+					if (type) {
+						switch (type) {
+							case 1: map[m].adjust.atk_attacker = val; break;
+							case 2: map[m].adjust.atk_short_damage_rate = val; break;
+							case 3: map[m].adjust.atk_long_damage_rate= val; break;
+							case 4: map[m].adjust.atk_weapon_damage_rate= val; break;
+							case 5: map[m].adjust.atk_magic_damage_rate= val; break;
+							case 6: map[m].adjust.atk_misc_damage_rate= val; break;
+							default:
+								map[m].adjust.atk_attacker = BL_ALL;
+								map[m].adjust.atk_short_damage_rate = val;
+								map[m].adjust.atk_long_damage_rate = val;
+								map[m].adjust.atk_weapon_damage_rate = val;
+								map[m].adjust.atk_magic_damage_rate = val;
+								map[m].adjust.atk_misc_damage_rate = val;
+								break;
+						}
+						break;
+					}
+					map[m].flag.atk_rate = 1;
+				} break;
 		}
 	}
 	return SCRIPT_CMD_SUCCESS;
@@ -11474,6 +11548,15 @@ BUILDIN_FUNC(removemapflag)
 					memset(&map[m].adjust.damage,0,sizeof(map[m].adjust.damage));
 				} break;
 #endif
+			case MF_ATK_RATE:
+				map[m].flag.atk_rate = 0;
+				map[m].adjust.atk_attacker = BL_PC;
+				map[m].adjust.atk_short_damage_rate =
+					map[m].adjust.atk_long_damage_rate =
+					map[m].adjust.atk_weapon_damage_rate =
+					map[m].adjust.atk_magic_damage_rate =
+					map[m].adjust.atk_misc_damage_rate = 100;
+				break;
 		}
 	}
 	return SCRIPT_CMD_SUCCESS;
@@ -19040,9 +19123,9 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(itemskill,"vi"),
 	BUILDIN_DEF(produce,"i"),
 	BUILDIN_DEF(cooking,"i"),
-	BUILDIN_DEF(monster,"siisii???"),
+	BUILDIN_DEF(monster,"siisii????"),
 	BUILDIN_DEF(getmobdrops,"i"),
-	BUILDIN_DEF(areamonster,"siiiisii???"),
+	BUILDIN_DEF(areamonster,"siiiisii????"),
 	BUILDIN_DEF(killmonster,"ss?"),
 	BUILDIN_DEF(killmonsterall,"s?"),
 	BUILDIN_DEF(clone,"siisi????"),

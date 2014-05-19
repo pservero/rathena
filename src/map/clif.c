@@ -9823,6 +9823,15 @@ void clif_parse_LoadEndAck(int fd,struct map_session_data *sd)
 	if(!battle_config.pc_invincible_time)
 		skill_unit_move(&sd->bl,gettick(),1);
 
+#ifdef DISPLAY_MAP_DESC
+	// Announce map description [Cydh]
+	if (map[sd->bl.m].desc[0] != '\0') {
+		char output[CHAT_SIZE_MAX];
+		sprintf(output, msg_txt(sd,1605), map[sd->bl.m].desc);
+		clif_broadcast2(&sd->bl, output, CHAT_SIZE_MAX, map[sd->bl.m].desc_color ? map[sd->bl.m].desc_color : battle_config.map_announce_color, 0x190, battle_config.map_announce_fontsize, 0, 0, SELF);
+	}
+#endif
+
 	// NPC Quest / Event Icon Check [Kisuka]
 #if PACKETVER >= 20090218
 	for(i = 0; i < map[sd->bl.m].qi_count; i++) {

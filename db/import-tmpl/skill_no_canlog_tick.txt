@@ -1,0 +1,3 @@
+// Skill that listed here won't trigger the 'canlog_tick' of player
+// <SkillName or SkillID>
+// [Cydh] house.bad@gmail.com

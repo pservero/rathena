@@ -449,6 +449,7 @@ ACMD_FUNC(mapmove)
 	unsigned short mapindex;
 	short x = 0, y = 0;
 	int16 m = -1;
+	int64 diff_tick; //[Cydh]
 
 	nullpo_retr(-1, sd);
 
@@ -459,6 +460,13 @@ ACMD_FUNC(mapmove)
 		 sscanf(message, "%15[^,],%hd,%hd", map_name, &x, &y) < 1)) {
 			clif_displaymessage(fd, msg_txt(sd,909)); // Please enter a map (usage: @warp/@rura/@mapmove <mapname> <x> <y>).
 			return -1;
+	}
+
+	// Warp on battle [Cydh]
+	if ((diff_tick = DIFF_TICK(sd->canwarp_tick, gettick())) > 0 && !pc_has_permission(sd, PC_PERM_WARP_ANYWHERE)) {
+		sprintf(atcmd_output, msg_txt(sd, 1601), diff_tick/1000.+1, command);
+		clif_displaymessage(fd, atcmd_output);
+		return -1;
 	}
 
 	mapindex = mapindex_name2id(map_name);
@@ -1805,6 +1813,7 @@ ACMD_FUNC(go)
 	int town;
 	char map_name[MAP_NAME_LENGTH];
 	int16 m;
+	int64 diff_tick; //[Cydh]
 
 	const struct {
 		char map[MAP_NAME_LENGTH];
@@ -1857,6 +1866,13 @@ ACMD_FUNC(go)
 	if( map[sd->bl.m].flag.nogo && !pc_has_permission(sd, PC_PERM_WARP_ANYWHERE) ) {
 		clif_displaymessage(sd->fd,msg_txt(sd,995)); // You cannot use @go on this map.
 		return 0;
+	}
+
+	// Warp on battle [Cydh]
+	if ((diff_tick = DIFF_TICK(sd->canwarp_tick, gettick())) > 0 && !pc_has_permission(sd, PC_PERM_WARP_ANYWHERE)) {
+		sprintf(atcmd_output, msg_txt(sd, 1601), diff_tick/1000.+1, command);
+		clif_displaymessage(fd, atcmd_output);
+		return -1;
 	}
 
 	memset(map_name, '\0', sizeof(map_name));
@@ -2075,7 +2091,7 @@ ACMD_FUNC(monster)
 	for (i = 0; i < number; i++) {
 		int k;
 		map_search_freecell(&sd->bl, 0, &mx,  &my, range, range, 0);
-		k = mob_once_spawn(sd, sd->bl.m, mx, my, name, mob_id, 1, eventname, size, AI_NONE);
+		k = mob_once_spawn(sd, sd->bl.m, mx, my, name, mob_id, 1, eventname, size, AI_NONE, 0);
 		if(k) {
 			//mapreg_setreg(reference_uid(add_str("$@mobid"), i),k); //retain created mobid in array uncomment if needed
 			count ++;
@@ -2818,6 +2834,7 @@ ACMD_FUNC(petrename)
  *------------------------------------------*/
 ACMD_FUNC(recall) {
 	struct map_session_data *pl_sd = NULL;
+	int64 diff_tick; //[Cydh]
 
 	nullpo_retr(-1, sd);
 
@@ -2844,6 +2861,12 @@ ACMD_FUNC(recall) {
 	}
 	if (pl_sd->bl.m >= 0 && map[pl_sd->bl.m].flag.nowarp && !pc_has_permission(sd, PC_PERM_WARP_ANYWHERE)) {
 		clif_displaymessage(fd, msg_txt(sd,1020)); // You are not authorized to warp this player from their map.
+		return -1;
+	}
+	// Warp on battle [Cydh]
+	if ((diff_tick = DIFF_TICK(pl_sd->canwarp_tick, gettick())) > 0 && !pc_has_permission(pl_sd, PC_PERM_WARP_ANYWHERE)) {
+		sprintf(atcmd_output, msg_txt(sd, 1601), diff_tick/1000., "recall this player");
+		clif_displaymessage(fd, atcmd_output);
 		return -1;
 	}
 	if (pl_sd->bl.m == sd->bl.m && pl_sd->bl.x == sd->bl.x && pl_sd->bl.y == sd->bl.y) {
@@ -3937,6 +3960,18 @@ ACMD_FUNC(mapinfo) {
 		}
 	}
 #endif
+
+	//Global Damage adjustment. [Cydh]
+	if (map[m_id].flag.atk_rate) {
+		sprintf(atcmd_output,msg_txt(sd,534), //Damage Adjustment: Attacker: %d. Short: %d%%. Long: %d%%. Weapon: %d%%. Magic: %d%%. Misc: %d%%
+			map[m_id].adjust.atk_attacker,
+			map[m_id].adjust.atk_short_damage_rate,
+			map[m_id].adjust.atk_long_damage_rate,
+			map[m_id].adjust.atk_weapon_damage_rate,
+			map[m_id].adjust.atk_magic_damage_rate,
+			map[m_id].adjust.atk_misc_damage_rate);
+		clif_displaymessage(fd,atcmd_output);
+	}
 
 	strcpy(atcmd_output,msg_txt(sd,1046)); // PvP Flags:
 	if (map[m_id].flag.pvp)
@@ -7895,6 +7930,7 @@ ACMD_FUNC(mapflag) {
 #ifdef ADJUST_SKILL_DAMAGE
 		checkflag(skill_damage);
 #endif
+		checkflag(atk_rate);
 		clif_displaymessage(sd->fd," ");
 		clif_displaymessage(sd->fd,msg_txt(sd,1312)); // Usage: "@mapflag monster_noteleport 1" (0=Off | 1=On)
 		clif_displaymessage(sd->fd,msg_txt(sd,1313)); // Type "@mapflag available" to list the available mapflags.
@@ -7919,6 +7955,7 @@ ACMD_FUNC(mapflag) {
 #ifdef ADJUST_SKILL_DAMAGE
 	setflag(skill_damage);
 #endif
+	setflag(atk_rate);
 
 	clif_displaymessage(sd->fd,msg_txt(sd,1314)); // Invalid flag name or flag.
 	clif_displaymessage(sd->fd,msg_txt(sd,1312)); // Usage: "@mapflag monster_noteleport 1" (0=Off | 1=On)

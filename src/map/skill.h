@@ -177,6 +177,7 @@ struct s_skill_db {
 		uint8 option;
 		uint16 joballowed, req_opt;
 	} copyable;
+	bool no_canlog_tick; // [Cydh]
 };
 extern struct s_skill_db skill_db[MAX_SKILL_DB];
 
@@ -318,6 +319,7 @@ int skill_get_delay( uint16 skill_id ,uint16 skill_lv );
 int skill_get_walkdelay( uint16 skill_id ,uint16 skill_lv );
 int skill_get_time( uint16 skill_id ,uint16 skill_lv );
 int skill_get_time2( uint16 skill_id ,uint16 skill_lv );
+int skill_get_cooldown( uint16 skill_id, uint16 skill_lv );
 int skill_get_castnodex( uint16 skill_id ,uint16 skill_lv );
 int skill_get_castdef( uint16 skill_id );
 int skill_get_nocast( uint16 skill_id );
@@ -1995,6 +1997,16 @@ int skill_get_elemental_type(uint16 skill_id, uint16 skill_lv);
 
 void skill_combo_toogle_inf(struct block_list* bl, uint16 skill_id, int inf);
 void skill_combo(struct block_list* src,struct block_list *dsrc, struct block_list *bl, uint16 skill_id, uint16 skill_lv, int tick);
+
+// Skill map adjustments [Cydh]
+int skill_get_maxcount2(uint16 skill_id, uint16 skill_lv, int m);
+int skill_get_cast2(uint16 skill_id, uint16 skill_lv, int m);
+int skill_get_fixed_cast2(uint16 skill_id, uint16 skill_lv, int m);
+int skill_get_actdelay2(uint16 skill_id, uint16 skill_lv, int m);
+int skill_get_walkdelay2(uint16 skill_id, uint16 skill_lv, int m);
+int skill_get_duration(uint16 skill_id, uint16 skill_lv, int m);
+int skill_get_duration2(uint16 skill_id, uint16 skill_lv, int m);
+int skill_get_cooldown2(uint16 skill_id, uint16 skill_lv, int m);
 
 #ifdef ADJUST_SKILL_DAMAGE
 /// Skill Damage target

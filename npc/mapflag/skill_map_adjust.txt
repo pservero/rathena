@@ -1,0 +1,58 @@
+// ================================================================
+// Mapflag for Skill Adjustments
+// [Cydh] house.bad@gmail.com
+// http://pservero.com
+// ================================================================
+// Format:
+// <mapname>	mapflag	<available_mapflag>	<skill_name>,<value>
+// ----------------------------------------------------------------
+// available_mapflag:
+//	These mapflags will replace original values of skill,
+//	skill_maxcount		: Max count of skill unit on a map
+//	skill_cast			: Cast time of skill
+//	skill_fixedcast		: Fixed cast time of skill
+//	skill_actdelay		: Act delay of skill
+//	skill_walkdelay		: Walk delayof of skill
+//	skill_duration		: Skill unit duration
+//	skill_duration2		: Skill unit duration effect (like duration when player is trapped)
+//	skill_cooldown		: Cooldown time of skill
+//
+// skill_name:
+//	Please use skill name instead skill ID (see db/[pre-]re/skill_db.txt)
+//
+// value:
+//	Value that replace the original value.If the value only one, that means all values for all levels are same
+//	<valueLV1>{,<valueLV2>{,<valueLV3>{,<valueLV4>{,<valueLV5>...{,<valueLV10>}}}}}
+//
+//================================================================
+//prontera	mapflag	skill_maxcount	HT_ANKLESNARE,5:10:15:20:25
+//prontera	mapflag	skill_maxcount	HT_SHOCKWAVE,3:5:7:10:15
+//prontera	mapflag	skill_maxcount	HT_SANDMAN,3:5:7:10:15
+//
+//prontera	mapflag	skill_cast	HT_ANKLESNARE,2000:3000:4000:5000:6000
+//prontera	mapflag	skill_cast	HT_SHOCKWAVE,5000
+//prontera	mapflag	skill_cast	HT_SANDMAN,3000
+//
+//prontera	mapflag	skill_fixedcast	HT_ANKLESNARE,-1
+//prontera	mapflag	skill_fixedcast	HT_SHOCKWAVE,-1
+//prontera	mapflag	skill_fixedcast	HT_SANDMAN,-1
+//
+//prontera	mapflag	skill_actdelay	HT_ANKLESNARE,1000
+//prontera	mapflag	skill_actdelay	HT_SHOCKWAVE,2000
+//prontera	mapflag	skill_actdelay	HT_SANDMAN,3000
+//
+//prontera	mapflag	skill_walkdelay	HT_ANKLESNARE,3000
+//prontera	mapflag	skill_walkdelay	HT_SHOCKWAVE,3000
+//prontera	mapflag	skill_walkdelay	HT_SANDMAN,5000
+//
+//prontera	mapflag	skill_duration	HT_ANKLESNARE,1000:1500:2000:2500:3000
+//prontera	mapflag	skill_duration	HT_SHOCKWAVE,3000
+//prontera	mapflag	skill_duration	HT_SANDMAN,4000
+//
+//prontera	mapflag	skill_duration2	HT_ANKLESNARE,1000:1500:2000:2500:3000
+//prontera	mapflag	skill_duration2	HT_SHOCKWAVE,2000
+//prontera	mapflag	skill_duration2	HT_SANDMAN,2000
+//
+//prontera	mapflag	skill_cooldown	HT_ANKLESNARE,1000:1500:2000:2500:3000
+//prontera	mapflag	skill_cooldown	HT_SHOCKWAVE,2000
+//prontera	mapflag	skill_cooldown	HT_SANDMAN,0

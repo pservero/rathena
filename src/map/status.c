@@ -2869,6 +2869,9 @@ int status_calc_pc_(struct map_session_data* sd, bool first)
 		+ sizeof(sd->sp_gain_race)
 		+ sizeof(sd->sp_gain_race_attack)
 		+ sizeof(sd->hp_gain_race_attack)
+		+ sizeof(sd->skill_no_require_item) // [Cydh]
+		+ sizeof(sd->oneshootonekill_class) // [Cydh]
+		+ sizeof(sd->oneshootonekill_race) // [Cydh]
 		);
 
 	memset (&sd->right_weapon.overrefine, 0, sizeof(sd->right_weapon) - sizeof(sd->right_weapon.atkmods));
@@ -2928,6 +2931,8 @@ int status_calc_pc_(struct map_session_data* sd, bool first)
 		+ sizeof(sd->skillfixcast)
 		+ sizeof(sd->skillvarcast)
 		+ sizeof(sd->skillfixcastrate)
+		+ sizeof(sd->skill_no_require) // [Cydh]
+		+ sizeof(sd->oneshootonekill_mob) // [Cydh]
 	);
 
 	memset (&sd->bonus, 0,sizeof(sd->bonus));

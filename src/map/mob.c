@@ -463,7 +463,7 @@ struct mob_data *mob_once_spawn_sub(struct block_list *bl, int16 m, int16 x, int
 /*==========================================
  * Spawn a single mob on the specified coordinates.
  *------------------------------------------*/
-int mob_once_spawn(struct map_session_data* sd, int16 m, int16 x, int16 y, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, unsigned int ai)
+int mob_once_spawn(struct map_session_data* sd, int16 m, int16 x, int16 y, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, unsigned int ai, uint8 flag)
 {
 	struct mob_data* md = NULL;
 	int count, lv;
@@ -501,6 +501,7 @@ int mob_once_spawn(struct map_session_data* sd, int16 m, int16 x, int16 y, const
 			}
 		}	// end addition [Valaris]
 
+		md->special_state.flag = flag; // [Cydh]
 		mob_spawn(md);
 
 		if (mob_id < 0 && battle_config.dead_branch_active)
@@ -515,7 +516,7 @@ int mob_once_spawn(struct map_session_data* sd, int16 m, int16 x, int16 y, const
 /*==========================================
  * Spawn mobs in the specified area.
  *------------------------------------------*/
-int mob_once_spawn_area(struct map_session_data* sd, int16 m, int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, unsigned int ai)
+int mob_once_spawn_area(struct map_session_data* sd, int16 m, int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, unsigned int ai, uint8 flag)
 {
 	int i, max, id = 0;
 	int lx = -1, ly = -1;
@@ -561,7 +562,7 @@ int mob_once_spawn_area(struct map_session_data* sd, int16 m, int16 x0, int16 y0
 		lx = x;
 		ly = y;
 
-		id = mob_once_spawn(sd, m, x, y, mobname, mob_id, 1, event, size, ai);
+		id = mob_once_spawn(sd, m, x, y, mobname, mob_id, 1, event, size, ai, flag);
 	}
 
 	return id; // id of last spawned mob
@@ -2250,19 +2251,19 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
 			if( md->dmglog[i].flag == MDLF_PET )
 				per *= battle_config.pet_attack_exp_rate/100.;
 
-			if(battle_config.zeny_from_mobs && md->level) {
+			if(battle_config.zeny_from_mobs && md->level && !(md->special_state.flag&4)) {
 				 // zeny calculation moblv + random moblv [Valaris]
 				zeny=(int) ((md->level+rnd()%md->level)*per*bonus/100.);
 				if(md->db->mexp > 0)
 					zeny*=rnd()%250;
 			}
 
-			if (map[m].flag.nobaseexp || !md->db->base_exp)
+			if (map[m].flag.nobaseexp || !md->db->base_exp || md->special_state.flag&1)
 				base_exp = 0;
 			else
 				base_exp = (unsigned int)cap_value(md->db->base_exp * per * bonus/100. * map[m].adjust.bexp/100., 1, UINT_MAX);
 
-			if (map[m].flag.nojobexp || !md->db->job_exp || md->dmglog[i].flag == MDLF_HOMUN) //Homun earned job-exp is always lost.
+			if (map[m].flag.nojobexp || !md->db->job_exp || md->dmglog[i].flag == MDLF_HOMUN || md->special_state.flag&2) //Homun earned job-exp is always lost.
 				job_exp = 0;
 			else
 				job_exp = (unsigned int)cap_value(md->db->job_exp * per * bonus/100. * map[m].adjust.jexp/100., 1, UINT_MAX);
@@ -2322,7 +2323,7 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
 
 	} //End EXP giving.
 
-	if( !(type&1) && !map[m].flag.nomobloot && !md->state.rebirth && (
+	if( !(type&1) && !map[m].flag.nomobloot && !md->state.rebirth && !(md->special_state.flag&8) && (
 		!md->special_state.ai || //Non special mob
 		battle_config.alchemist_summon_reward == 2 || //All summoned give drops
 		(md->special_state.ai==AI_SPHERE && battle_config.alchemist_summon_reward == 1) //Marine Sphere Drops items.
@@ -2483,7 +2484,7 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
 		add_timer(tick + (!battle_config.delay_battle_damage?500:0), mob_delay_item_drop, 0, (intptr_t)dlist);
 	}
 
-	if(mvp_sd && md->db->mexp > 0 && !md->special_state.ai) {
+	if(mvp_sd && md->db->mexp > 0 && !md->special_state.ai && !(md->special_state.flag&32)) {
 		int log_mvp[2] = {0};
 		unsigned int mexp;
 		struct item item;
@@ -2611,7 +2612,7 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
 				mercenary_kills(sd->md);
 		}
 
-		if( md->npc_event[0] && !md->state.npc_killmonster ) {
+		if( md->npc_event[0] && !md->state.npc_killmonster && !(md->special_state.flag&16) ) {
 			if( sd && battle_config.mob_npc_event_type ) {
 				pc_setparam(sd, SP_KILLERRID, sd->bl.id);
 				npc_event(sd,md->npc_event,0);

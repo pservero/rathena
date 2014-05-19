@@ -373,6 +373,7 @@ mf_nolockon	58
 mf_notomb	59
 mf_skill_damage	60
 
+
 //'setcell' types
 cell_walkable	0
 cell_shootable	1
@@ -4572,3 +4573,24 @@ IT_CASH	18
 
 false	0
 true	1
+
+// Custom Constant [PServeRO]
+// Bonuses
+bOneShootOneKillClass	2084
+bOneShootOneKillRace	2085
+bOneShootOneKillMonster	2086
+bSubOneShootOneKill	2087
+bSkillNoRequire	2089
+bSkillNoRequireItem	2090
+bNoRequireAmmo	2091
+
+// Mapflags
+mf_skill_maxcount	70
+mf_skill_cast	71
+mf_skill_fixedcast	72
+mf_skill_actdelay	73
+mf_skill_walkdelay	74
+mf_skill_duration	75
+mf_skill_duration2	76
+mf_skill_cooldown	77
+mf_atk_rate	78

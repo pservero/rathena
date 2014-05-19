@@ -398,3 +398,31 @@ bonus bPerfectHide,n;     		Hidden/cloaked character is no longer detected by mo
 bonus bRestartFullRecover,n;	When reviving, HP and SP are fully healed (n is meaningless)
 bonus bClassChange,n;     		Gives a n/100% chance to change the attacked monster's class with normal attack
 bonus bAddStealRate,n;    		Increases success rate of Steal skill by n/100%
+
+
+Custom Bonuses [PServeRO]
+-------------------------
+
+bonus bSubOneShootOneKill,n;			Reduces opponent's chance to deals instant kill by n/100%.
+bonus2 bOneShootOneKillClass,c,n;		Deadly instant kill to the oppenent with class c by n/100%.
+bonus2 bOneShootOneKillRace,r,n;		Deadly instant kill to the oppenent with race r by n/100%.
+bonus2 bOneShootOneKillMonster,mid,n;	Deadly instant kill to monster with ID mid by n/100%.
+
+bonus bSkillNoRequire,n;			Removes n requirement when use skill.
+bonus2 bSkillNoRequire,sk,n;		Removes n requirement when use sk skill.
+									n is bitmask to removes:
+									1	- HP cost
+									2	- MaxHP trigger
+									4	- SP cost
+									8	- HP rate cost
+									16	- SP rate cost
+									32	- Zeny cost
+									64	- Weapon type
+									128	- Ammo
+									256	- Required state
+									512	- Required status
+									1024	- Spirit sphere
+									2048	- Required item
+									4096	- Required equipment
+bonus bSkillNoRequireItem,iid;		Removes iid from skill requirement.
+bonus bNoRequireAmmo,n;				Removes ammunition usage when use normal attack/not using skill (n is meaningless).

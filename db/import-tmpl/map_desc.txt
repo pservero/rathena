@@ -1,0 +1,4 @@
+// Map Description Database
+// <MapName>#<Description>{#Color using Hexacode}
+// [Cydh] house.bad@gmail.com
+//

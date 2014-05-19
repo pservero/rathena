@@ -25,6 +25,7 @@ The format of this file is as follows:
 	8. Pet Commands
 	9. Homunculus Commands
 	10. Channel Commands
+	11. Custom Command [PServeRO]
 
 ======================
 | 1. System Commands |
@@ -1652,5 +1653,19 @@ Bans or unbans a player from the specified channel.
 @channel unbind
 
 Binds or unbinds your global chat with the specified channel, which sends all global messages to the specified channel.
+
+---------------------------------------
+
+==================================
+| 11. Custom Commands [PServeRO] |
+==================================
+
+---------------------------------------
+
+@gstoreall
+
+Store all items in inventory to guild storage.
+
+NOTE: Player must opened guild storage manually once after logging in.
 
 ---------------------------------------

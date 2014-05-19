@@ -9,3 +9,12 @@
  **/
 
 //ACMD_DEF(newcommand),
+
+/**
+ * Custom Commands by PServeRO
+ **/
+ACMD_DEF(gstoreall),
+#ifdef DISPLAY_MAP_DESC
+ACMD_DEF(reloadmapdesc),
+#endif
+

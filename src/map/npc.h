@@ -113,6 +113,7 @@ enum npce_event {
 	NPCE_KILLPC,
 	NPCE_KILLNPC,
 	NPCE_STATCALC,
+	NPCE_ONESHOOT, // [Cydh]
 	NPCE_MAX
 };
 struct view_data* npc_get_viewdata(int class_);

@@ -3764,6 +3764,171 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 		ShowInfo("npc_parse_mapflag: skill_damage: ADJUST_SKILL_DAMAGE is inactive (core.h). Skipping this mapflag..\n");
 #endif
 	}
+	// Skill map adjustments [Cydh]
+	else if (!strncmp(w3,"skill_",6)) {
+		uint8 adjust_type = 0;
+		if (!strcmpi(w3,"skill_maxcount"))
+			adjust_type = 1;
+		else if (!strcmpi(w3,"skill_cast"))
+			adjust_type = 2;
+		else if (!strcmpi(w3,"skill_fixedcast"))
+			adjust_type = 3;
+		else if (!strcmpi(w3,"skill_actdelay"))
+			adjust_type = 4;
+		else if (!strcmpi(w3,"skill_walkdelay"))
+			adjust_type = 5;
+		else if (!strcmpi(w3,"skill_duration"))
+			adjust_type = 6;
+		else if (!strcmpi(w3,"skill_duration2"))
+			adjust_type = 7;
+		else if (!strcmpi(w3,"skill_cooldown"))
+			adjust_type = 8;
+
+		if (adjust_type > 0) {
+			if (!state) {
+
+#define unset_skill_adjustment(var) {\
+	map[m].flag.var = 0;\
+	memset(map[m].adjust.var, 0, sizeof(map[m].adjust.var));\
+}
+				switch (adjust_type) {
+					case 1:
+						unset_skill_adjustment(skill_maxcount);
+						break;
+					case 2:
+						unset_skill_adjustment(skill_cast);
+						break;
+					case 3:
+						unset_skill_adjustment(skill_fixed_cast);
+						break;
+					case 4:
+						unset_skill_adjustment(skill_actdelay);
+						break;
+					case 5:
+						unset_skill_adjustment(skill_walkdelay);
+						break;
+					case 6:
+						unset_skill_adjustment(skill_duration);
+						break;
+					case 7:
+						unset_skill_adjustment(skill_duration2);
+						break;
+					case 8:
+						unset_skill_adjustment(skill_cooldown);
+						break;
+				}
+#undef unset_skill_adjustment
+			}
+			else {
+				char skill[NAME_LENGTH];
+				char values[1024];
+
+				memset(skill, 0, sizeof(skill));
+				memset(values, 0, sizeof(values));
+
+				if (sscanf(w4,"%24[^,],%1024[^\n]", skill, values) == 2) {
+					if (skill_name2id(skill) < 0)
+						ShowWarning("npc_parse_mapflag: %s: Invalid skill name '%s' at '%s' line '%d'.\n", w3, skill, filepath, strline(buffer,start-buffer));
+					else {
+						int last_val = 0;
+						uint8 num = 0, i = 0;
+						char *p;
+						struct s_map_skill_adjust adjust;
+
+						adjust.skill_id = skill_name2id(skill);
+						p = strtok(values,":");
+						while (p != NULL && i < MAX_SKILL_LEVEL) {
+							last_val = adjust.val[i] = atoi(p);
+							i++;
+							p = strtok(NULL,":");
+						}
+						while (i < MAX_SKILL_LEVEL) {
+							adjust.val[i] = last_val;
+							i++;
+						}
+
+#define set_skill_adjustment(var) {\
+	uint8 i;\
+	ARR_FIND(0, ARRAYLENGTH(map[m].adjust.var), i, map[m].adjust.var[i].skill_id == 0);\
+	if (i >= ARRAYLENGTH(map[m].adjust.var))\
+	ShowWarning("npc_parse_mapflag: %s: Skill damage for map '%s' is overflow.\n", #var, map[m].name);\
+	else {\
+		memcpy(&map[m].adjust.var[i], &adjust, sizeof(adjust));\
+		map[m].flag.var = 1;\
+	}\
+}
+						switch (adjust_type) {
+							case 1: // Maxcount
+								set_skill_adjustment(skill_maxcount);
+								break;
+							case 2: //Cast
+								set_skill_adjustment(skill_cast);
+								break;
+							case 3: //Fixed Cast
+								set_skill_adjustment(skill_fixed_cast);
+								break;
+							case 4: //Act Delay
+								set_skill_adjustment(skill_actdelay);
+								break;
+							case 5: //Walk Delay
+								set_skill_adjustment(skill_walkdelay);
+								break;
+							case 6: //Duration
+								set_skill_adjustment(skill_duration);
+								break;
+							case 7: //Duration 2
+								set_skill_adjustment(skill_duration2);
+								break;
+							case 8: //Cooldown
+								set_skill_adjustment(skill_cooldown);
+								break;
+						}
+#undef set_skill_adjustment
+					}
+				}
+				else
+					ShowWarning("npc_parse_mapflag: %s: Invalid format at '%s' line '%d'. Usage: <SkillName>,<Val1:Val2:...:Val10>\n", w3, filepath, strline(buffer,start-buffer));
+			}
+		}
+	}
+	// Global Damage adjustment. [Cydh]
+	else if (!strcmpi(w3,"atk_rate")) {
+		if (!state) {
+			map[m].flag.atk_rate = 0;
+			map[m].adjust.atk_attacker = BL_PC;
+			map[m].adjust.atk_short_damage_rate =
+				map[m].adjust.atk_long_damage_rate =
+				map[m].adjust.atk_weapon_damage_rate =
+				map[m].adjust.atk_magic_damage_rate =
+				map[m].adjust.atk_misc_damage_rate = 100;
+		}
+		else {
+			int atk_attacker = 0,
+				atk_short_damage_rate = 0,
+				atk_long_damage_rate = 0,
+				atk_weapon_damage_rate = 0,
+				atk_magic_damage_rate = 0,
+				atk_misc_damage_rate = 0;
+			if (sscanf(w4,"%d,%d,%d,%d,%d,%d",
+				&atk_attacker,
+				&atk_short_damage_rate,
+				&atk_long_damage_rate,
+				&atk_weapon_damage_rate,
+				&atk_magic_damage_rate,
+				&atk_misc_damage_rate) >= 2)
+			{
+				map[m].flag.atk_rate = 1;
+				map[m].adjust.atk_attacker = cap_value(atk_attacker,BL_PC,BL_ALL);
+				map[m].adjust.atk_short_damage_rate = cap_value(atk_short_damage_rate,1,INT_MAX);
+				map[m].adjust.atk_long_damage_rate = (atk_long_damage_rate) ? cap_value(atk_long_damage_rate,1,INT_MAX) : atk_short_damage_rate;
+				map[m].adjust.atk_weapon_damage_rate = (atk_weapon_damage_rate) ? cap_value(atk_weapon_damage_rate,1,INT_MAX) : atk_short_damage_rate;
+				map[m].adjust.atk_magic_damage_rate = (atk_magic_damage_rate) ? cap_value(atk_magic_damage_rate,1,INT_MAX) : atk_short_damage_rate;
+				map[m].adjust.atk_misc_damage_rate = (atk_misc_damage_rate) ? cap_value(atk_misc_damage_rate,1,INT_MAX) : atk_short_damage_rate;
+			}
+			else
+				ShowInfo("npc_parse_mapflag: atk_rate: Not sufficient values (file '%s', line '%d'). Skipping..\n",filepath,strline(buffer,start-buffer));
+		}
+	}
 	else
 		ShowError("npc_parse_mapflag: unrecognized mapflag '%s' (file '%s', line '%d').\n", w3, filepath, strline(buffer,start-buffer));
 
@@ -3966,6 +4131,8 @@ void npc_read_event_script(void)
 		{"Kill PC Event",script_config.kill_pc_event_name},
 		{"Kill NPC Event",script_config.kill_mob_event_name},
 		{"Stat Calc Event",script_config.stat_calc_event_name},
+
+		{"OneShoot OneKill Event",script_config.oneshootonekill_event_name}, // [Cydh]
 	};
 
 	for (i = 0; i < NPCE_MAX; i++)

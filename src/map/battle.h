@@ -480,6 +480,21 @@ extern struct Battle_Config
 	int bg_misc_damage_rate;
 	int bg_flee_penalty;
 
+	// PServeRO http://pservero.com
+	// Global Damage adjustment. [Cydh]
+	int atk_adjustment_map;
+	int atk_damage_attacker;
+	int atk_short_damage_rate;
+	int atk_long_damage_rate;
+	int atk_weapon_damage_rate;
+	int atk_magic_damage_rate;
+	int atk_misc_damage_rate;
+	// Warp on Battle [Cydh]
+	int prevent_warponbattle;
+	// Announce map description [Cydh]
+	int map_announce_color;
+	int map_announce_fontsize;
+
 	// rAthena
 	int max_third_parameter;
 	int max_baby_third_parameter;

@@ -125,6 +125,7 @@ struct mob_data {
 		unsigned int size : 2; //Small/Big monsters.
 		enum mob_ai ai; //Special ai for summoned monsters.
 		unsigned int clone : 1;/* is clone? 1:0 */
+		uint8 flag; // [Cydh]
 	} special_state; //Special mob information that does not needs to be zero'ed on mob respawn.
 	struct {
 		unsigned int aggressive : 1; //Signals whether the mob AI is in aggressive mode or reactive mode. [Skotlex]
@@ -242,10 +243,10 @@ struct mob_data *mob_once_spawn_sub(struct block_list *bl, int16 m,
 	short x, short y, const char *mobname, int mob_id, const char *event, unsigned int size, unsigned int ai);
 
 int mob_once_spawn(struct map_session_data* sd, int16 m, int16 x, int16 y,
-	const char* mobname, int mob_id, int amount, const char* event, unsigned int size, unsigned int ai);
+	const char* mobname, int mob_id, int amount, const char* event, unsigned int size, unsigned int ai, uint8 flag);
 
 int mob_once_spawn_area(struct map_session_data* sd, int16 m,
-	int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, unsigned int ai);
+	int16 x0, int16 y0, int16 x1, int16 y1, const char* mobname, int mob_id, int amount, const char* event, unsigned int size, unsigned int ai, uint8 flag);
 
 bool mob_ksprotected (struct block_list *src, struct block_list *target);
 

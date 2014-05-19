@@ -1558,7 +1558,7 @@ int unit_skilluse_id2(struct block_list *src, int target_id, uint16 skill_id, ui
 	if( casttime <= 0 )
 		ud->state.skillcastcancel = 0;
 
-	if( !sd || sd->skillitem != skill_id || skill_get_cast(skill_id,skill_lv) )
+	if( !sd || sd->skillitem != skill_id || skill_get_cast2(skill_id,skill_lv,src->m) )
 		ud->canact_tick = tick + casttime + 100;
 	if( sd ) {
 		switch( skill_id ) {
@@ -1592,8 +1592,11 @@ int unit_skilluse_id2(struct block_list *src, int target_id, uint16 skill_id, ui
 	} else
 		skill_castend_id(ud->skilltimer,tick,src->id,0);
 
-	if( sd )
+	if( sd && !skill_db[skill_get_index(skill_id)].no_canlog_tick )
 		sd->canlog_tick = gettick();
+
+	if (sd) //Warp on Battle [Cydh]
+		sd->canwarp_tick = gettick() + battle_config.prevent_warponbattle;
 
 	return 1;
 }
@@ -1717,7 +1720,7 @@ int unit_skilluse_pos2( struct block_list *src, short skill_x, short skill_y, ui
 		casttime = 0;
 
 	ud->state.skillcastcancel = castcancel&&casttime>0?1:0;
-	if( !sd || sd->skillitem != skill_id || skill_get_cast(skill_id,skill_lv) )
+	if( !sd || sd->skillitem != skill_id || skill_get_cast2(skill_id,skill_lv,src->m) )
 		ud->canact_tick  = tick + casttime + 100;
 // 	if( sd )
 // 	{
@@ -1756,8 +1759,10 @@ int unit_skilluse_pos2( struct block_list *src, short skill_x, short skill_y, ui
 		skill_castend_pos(ud->skilltimer,tick,src->id,0);
 	}
 
-	if( sd )
+	if( sd && !skill_db[skill_get_index(skill_id)].no_canlog_tick )
 		sd->canlog_tick = gettick();
+	if (sd) //Warp on Battle [Cydh]
+		sd->canwarp_tick = gettick() + battle_config.prevent_warponbattle;
 	return 1;
 }
 
@@ -1854,6 +1859,8 @@ int unit_attack(struct block_list *src,int target_id,int continuous)
 			unit_stop_attack(src);
 			return 0;
 		}
+		if (battle_config.prevent_warponbattle) // Warp on Battle [Cydh]
+			sd->canwarp_tick = gettick() + battle_config.prevent_warponbattle;
 	}
 	if( battle_check_target(src,target,BCT_ENEMY) <= 0 || !status_check_skilluse(src, target, 0, 0) ) {
 		unit_unattackable(src);
@@ -2181,8 +2188,15 @@ static int unit_attack_timer(int tid, unsigned int tick, int id, intptr_t data)
 {
 	struct block_list *bl;
 	bl = map_id2bl(id);
-	if(bl && unit_attack_timer_sub(bl, tid, tick) == 0)
+	if(bl && unit_attack_timer_sub(bl, tid, tick) == 0) {
+		// Warp on battle [Cydh]
+		if (bl->type == BL_PC) {
+			TBL_PC* sd = (TBL_PC*)bl;
+			if (sd && battle_config.prevent_warponbattle)
+				sd->canwarp_tick = gettick() + battle_config.prevent_warponbattle;
+		}
 		unit_unattackable(bl);
+	}
 	return 0;
 }
 

@@ -116,7 +116,7 @@ static int block_free_count = 0, block_free_lock = 0;
 static struct block_list *bl_list[BL_LIST_MAX];
 static int bl_list_count = 0;
 
-#define MAP_MAX_MSG 1500
+#define MAP_MAX_MSG 1650
 
 struct map_data map[MAX_MAP_PER_SERVER];
 int map_num = 0;
@@ -402,7 +402,7 @@ int map_moveblock(struct block_list *bl, int x1, int y1, unsigned int tick)
 		status_change_end(bl, SC_TATAMIGAESHI, INVALID_TIMER);
 		status_change_end(bl, SC_MAGICROD, INVALID_TIMER);
 		if (sc->data[SC_PROPERTYWALK] &&
-			sc->data[SC_PROPERTYWALK]->val3 >= skill_get_maxcount(sc->data[SC_PROPERTYWALK]->val1,sc->data[SC_PROPERTYWALK]->val2) )
+			sc->data[SC_PROPERTYWALK]->val3 >= skill_get_maxcount2(sc->data[SC_PROPERTYWALK]->val1,sc->data[SC_PROPERTYWALK]->val2, bl->m) )
 			status_change_end(bl,SC_PROPERTYWALK,INVALID_TIMER);
 	} else
 	if (bl->type == BL_NPC)
@@ -458,7 +458,7 @@ int map_moveblock(struct block_list *bl, int x1, int y1, unsigned int tick)
 				}
 
 				if (sc->data[SC_PROPERTYWALK]
-					&& sc->data[SC_PROPERTYWALK]->val3 < skill_get_maxcount(sc->data[SC_PROPERTYWALK]->val1,sc->data[SC_PROPERTYWALK]->val2)
+					&& sc->data[SC_PROPERTYWALK]->val3 < skill_get_maxcount2(sc->data[SC_PROPERTYWALK]->val1,sc->data[SC_PROPERTYWALK]->val2, bl->m)
 					&& map_find_skill_unit_oncell(bl,bl->x,bl->y,SO_ELECTRICWALK,NULL,0) == NULL
 					&& map_find_skill_unit_oncell(bl,bl->x,bl->y,SO_FIREWALK,NULL,0) == NULL
 					&& skill_unitsetting(bl,sc->data[SC_PROPERTYWALK]->val1,sc->data[SC_PROPERTYWALK]->val2,x0, y0,0)) {
@@ -3108,6 +3108,22 @@ void map_flags_init(void)
 		memset(map[i].skill_damage, 0, sizeof(map[i].skill_damage));
 		memset(&map[i].adjust.damage, 0, sizeof(map[i].adjust.damage));
 #endif
+		// Skill map adjustments [Cydh]
+		memset(map[i].adjust.skill_maxcount, 0, sizeof(map[i].adjust.skill_maxcount));
+		memset(map[i].adjust.skill_cast, 0, sizeof(map[i].adjust.skill_cast));
+		memset(map[i].adjust.skill_fixed_cast, 0, sizeof(map[i].adjust.skill_fixed_cast));
+		memset(map[i].adjust.skill_actdelay, 0, sizeof(map[i].adjust.skill_actdelay));
+		memset(map[i].adjust.skill_walkdelay, 0, sizeof(map[i].adjust.skill_walkdelay));
+		memset(map[i].adjust.skill_duration, 0, sizeof(map[i].adjust.skill_duration));
+		memset(map[i].adjust.skill_duration2, 0, sizeof(map[i].adjust.skill_duration2));
+		memset(map[i].adjust.skill_cooldown, 0, sizeof(map[i].adjust.skill_cooldown));
+		//Global Damage Adjustment [Cydh]
+		map[i].adjust.atk_attacker = BL_PC;
+		map[i].adjust.atk_short_damage_rate = 100;
+		map[i].adjust.atk_long_damage_rate = 100;
+		map[i].adjust.atk_weapon_damage_rate = 100;
+		map[i].adjust.atk_magic_damage_rate = 100;
+		map[i].adjust.atk_misc_damage_rate = 100;
 
 		// adjustments
 		if( battle_config.pk_mode )
@@ -4189,4 +4205,26 @@ int do_init(int argc, char *argv[])
 
 	return 0;
 }
+
+#ifdef DISPLAY_MAP_DESC
+/* Parse each line of map description file [Cydh/PServeRO] */
+static bool map_parse_row_desc(char* split[], int columns, int current) {
+	short m = map_mapname2mapid(split[0]);
+
+	if (m < 0) {
+		ShowInfo("map_parse_row_desc: '%s' is unknown map.\n", split[0]);
+	}
+	else {
+		memset(map[m].desc, '\0', sizeof(map[m].desc)+1);
+		safestrncpy(map[m].desc, split[1], strlen(split[1])+1);
+		map[m].desc_color = strtoul(split[2],NULL,0);
+	}
+	return true;
+}
+
+/* Loads map desc file [Cydh/PServeRO] */
+void map_load_name_desc(void) {
+	sv_readdb(db_path, "map_desc.txt", '#', 2, 3, -1, map_parse_row_desc, 0);
+}
+#endif
 

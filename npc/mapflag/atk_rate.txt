@@ -1,0 +1,16 @@
+// ================================================================
+// Mapflag for Skill Adjustments
+// [Cydh] house.bad@gmail.com
+// http://pservero.com
+// ================================================================
+// Format:
+// <mapname>	mapflag	atk_rate	<AttackerType>,<ShortDamageRate>{,<LongDamageRate>,<WeaponDamageRate>,<MagicDamageRate>,<MiscDamageRate>}
+// ----------------------------------------------------------------
+// 'AttackerType'
+//	1: PC
+//	2: Mob
+//	4: Pet
+//	8: Homun
+// If only 'ShortDamageRate' that has the given value, the rest of rates will be same with its value.
+//================================================================
+//prontera	mapflag	atk_rate	1,150

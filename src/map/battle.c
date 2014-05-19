@@ -1341,6 +1341,59 @@ int64 battle_calc_gvg_damage(struct block_list *src,struct block_list *bl,int64 
 	return damage;
 }
 
+/* Calculates Global Damage adjustments
+* @author [Cydh]
+* @param src Attacker
+* @param flag Damage flag
+* @param damage Original damage
+* @return Modified damage
+*/
+static int64 battle_calc_normal_damage(struct block_list *src, int64 damage, int flag) {
+	uint32 zone, atk_maps;
+	uint16 m, attacker;
+
+	nullpo_ret(src);
+
+	if (!damage)
+		return 0;
+
+	m = src->m;
+	attacker = (map[m].adjust.atk_attacker) ? map[m].adjust.atk_attacker : battle_config.atk_damage_attacker;
+	//Wrong attacker
+	if (!(attacker&src->type))
+		return damage;
+
+	atk_maps = battle_config.atk_adjustment_map;
+	zone = (map[m].flag.restricted) ? 8*map[m].zone : 0;
+
+	//Checking mapflag
+	if ((atk_maps&1 && !map_flag_vs(m) && !map_flag_gvg(m) && !map[m].flag.battleground && !map[m].flag.atk_rate && !map[m].flag.restricted) ||
+		(atk_maps&2 && map_flag_vs(m)) ||
+		(atk_maps&4 && map_flag_gvg(m)) ||
+		(atk_maps&8 && map[m].flag.battleground) ||
+		(atk_maps&16 && map[m].flag.atk_rate) ||
+		(atk_maps&zone && map[m].flag.restricted))
+	{
+		if (flag&BF_SKILL) {
+			if (flag&BF_WEAPON)
+				DAMAGE_RATE((map[m].adjust.atk_weapon_damage_rate != 100) ? map[m].adjust.atk_weapon_damage_rate : battle_config.atk_weapon_damage_rate)
+			if (flag&BF_MAGIC)
+				DAMAGE_RATE((map[m].adjust.atk_magic_damage_rate != 100) ? map[m].adjust.atk_magic_damage_rate : battle_config.atk_magic_damage_rate)
+			if (flag&BF_MISC)
+				DAMAGE_RATE((map[m].adjust.atk_misc_damage_rate != 100) ? map[m].adjust.atk_misc_damage_rate : battle_config.atk_misc_damage_rate)
+		}
+		else {
+			if (flag&BF_SHORT)
+				DAMAGE_RATE((map[m].adjust.atk_short_damage_rate != 100) ? map[m].adjust.atk_short_damage_rate : battle_config.atk_short_damage_rate)
+			if (flag&BF_LONG)
+				DAMAGE_RATE((map[m].adjust.atk_long_damage_rate != 100) ? map[m].adjust.atk_long_damage_rate : battle_config.atk_long_damage_rate)
+		}
+		if (!damage)
+			damage  = 1;
+	}
+	return damage;
+}
+
 /*==========================================
  * HP/SP drain calculation
  *------------------------------------------*/
@@ -1654,7 +1707,21 @@ void battle_consume_ammo(TBL_PC*sd, int skill, int lv)
 	if (!battle_config.arrow_decrement)
 		return;
 
+	if (!skill && sd && sd->special_state.no_require_ammo) // bNoRequireAmmo  [Cydh]
+		return;
+
 	if (skill) {
+		// No requirement bonus check [Cydh]
+		if (sd) {
+			if (sd->bonus.skill_no_require&128) // bonus bSkillNoRequire,n;
+				return;
+			if (sd->special_state.skill_no_require) { // bonus2 bSkillNoRequire,sk,n;
+				uint8 i;
+				ARR_FIND(0, ARRAYLENGTH(sd->skill_no_require), i, sd->skill_no_require[i].skill_id == skill && sd->skill_no_require[i].state&128);
+				if (i < ARRAYLENGTH(sd->skill_no_require))
+					return;
+			}
+		}
 		qty = skill_get_ammo_qty(skill, lv);
 		if (!qty) qty = 1;
 	}
@@ -4487,6 +4554,7 @@ struct Damage battle_calc_attack_gvg_bg(struct Damage wd, struct block_list *src
 				wd.damage=battle_calc_gvg_damage(src,target,wd.damage,wd.div_,skill_id,skill_lv,wd.flag);
 			else if( map[target->m].flag.battleground )
 				wd.damage=battle_calc_bg_damage(src,target,wd.damage,wd.div_,skill_id,skill_lv,wd.flag);
+			wd.damage = battle_calc_normal_damage(src,wd.damage,wd.flag); //Global damage adjustment [Cydh]
 		}
 		else if(!wd.damage) {
 			wd.damage2 = battle_calc_damage(src,target,&wd,wd.damage2,skill_id,skill_lv);
@@ -4494,6 +4562,7 @@ struct Damage battle_calc_attack_gvg_bg(struct Damage wd, struct block_list *src
 				wd.damage2 = battle_calc_gvg_damage(src,target,wd.damage2,wd.div_,skill_id,skill_lv,wd.flag);
 			else if( map[target->m].flag.battleground )
 				wd.damage2 = battle_calc_bg_damage(src,target,wd.damage2,wd.div_,skill_id,skill_lv,wd.flag);
+			wd.damage2 = battle_calc_normal_damage(src,wd.damage,wd.flag); //Global damage adjustment [Cydh]
 		}
 		else {
 			int64 d1 = wd.damage + wd.damage2,d2 = wd.damage2;
@@ -4502,6 +4571,7 @@ struct Damage battle_calc_attack_gvg_bg(struct Damage wd, struct block_list *src
 				wd.damage = battle_calc_gvg_damage(src,target,wd.damage,wd.div_,skill_id,skill_lv,wd.flag);
 			else if( map[target->m].flag.battleground )
 				wd.damage = battle_calc_bg_damage(src,target,wd.damage,wd.div_,skill_id,skill_lv,wd.flag);
+			wd.damage = battle_calc_normal_damage(src,wd.damage,wd.flag); //Global damage adjustment [Cydh]
 			wd.damage2 = (int64)d2*100/d1 * wd.damage/100;
 			if(wd.damage > 1 && wd.damage2 < 1) wd.damage2 = 1;
 			wd.damage-=wd.damage2;
@@ -6288,7 +6358,46 @@ struct Damage battle_calc_attack(int attack_type,struct block_list *bl,struct bl
 		d.dmotion = 0;
 	}
 	else // Some skills like Weaponry Research will cause damage even if attack is dodged
+	{
 		d.dmg_lv = ATK_DEF;
+		// Head Shoot! [Cydh]
+		if (bl->type == BL_PC && target && !target_has_infinite_defense(target, skill_id)) {
+			struct map_session_data *sd = BL_CAST(BL_PC, bl);
+			if (sd) {
+				int rate = sd->oneshootonekill_class[status_get_class_(target)] +
+					sd->oneshootonekill_class[CLASS_ALL] +
+					sd->oneshootonekill_race[status_get_race(target)] +
+					sd->oneshootonekill_race[RC_ALL];
+
+				if (target->type == BL_MOB) {
+					struct mob_data *md = BL_CAST(BL_MOB,target);
+					if (md) {
+						uint8 i;
+						ARR_FIND(0, ARRAYLENGTH(sd->oneshootonekill_mob), i, sd->oneshootonekill_mob[i].mob_id == md->mob_id);
+						if (i < ARRAYLENGTH(sd->oneshootonekill_mob))
+							rate += sd->oneshootonekill_mob[i].rate;
+					}
+				}
+				if (target->type == BL_PC) {
+					struct map_session_data *tsd = BL_CAST(BL_PC, target);
+					if (tsd)
+						rate -= tsd->bonus.sub_oneshootonekill;
+				}
+
+				if (rate > 0) {
+					if (rate >= 10000 || rate > rnd()%10000) {
+						int hp = status_get_hp(target);
+						d.damage += hp;
+						if (is_attack_left_handed(bl, skill_id))
+							d.damage2 += hp;
+
+						pc_setparam(sd, SP_KILLEDRID, target->id);
+						npc_script_event(sd, NPCE_ONESHOOT);
+					}
+				}
+			}
+		}
+	}
 	return d;
 }
 
@@ -6804,7 +6913,7 @@ enum damage_lv battle_weapon_attack(struct block_list* src, struct block_list* t
 							type = -1;
 
 					if( BL_PC&battle_config.land_skill_limit &&
-						(maxcount = skill_get_maxcount(r_skill, r_lv)) > 0
+						(maxcount = skill_get_maxcount2(r_skill, r_lv, src->m)) > 0
 					  ) {
 						int v;
 						for(v=0;v<MAX_SKILLUNITGROUP && sd->ud.skillunit[v] && maxcount;v++) {
@@ -7703,6 +7812,23 @@ static const struct _battle_data {
 	{ "bg_magic_attack_damage_rate",        &battle_config.bg_magic_damage_rate,            60,     0,      INT_MAX,        },
 	{ "bg_misc_attack_damage_rate",         &battle_config.bg_misc_damage_rate,             60,     0,      INT_MAX,        },
 	{ "bg_flee_penalty",                    &battle_config.bg_flee_penalty,                 20,     0,      INT_MAX,        },
+	/**
+	 * PServeRO http://pservero.com
+	 **/
+	// Global Damage adjustment. [Cydh]
+	{ "atk_adjustment_map",					&battle_config.atk_adjustment_map,				1,		4095,	4095,			},
+	{ "atk_damage_attacker",				&battle_config.atk_damage_attacker,				1,		BL_PC,	BL_ALL,			},
+	{ "atk_short_attack_damage_rate",		&battle_config.atk_short_damage_rate,			100,	1,		10000,			},
+	{ "atk_long_attack_damage_rate",		&battle_config.atk_long_damage_rate,			100,	1,		10000,			},
+	{ "atk_weapon_attack_damage_rate",		&battle_config.atk_weapon_damage_rate,			100,	1,		10000,			},
+	{ "atk_magic_attack_damage_rate",		&battle_config.atk_magic_damage_rate,			100,	1,		10000,			},
+	{ "atk_misc_attack_damage_rate",		&battle_config.atk_misc_damage_rate,			100,	1,		10000,			},
+	// Warp on Battle [Cydh]
+	{ "prevent_warponbattle",				&battle_config.prevent_warponbattle,			5000,	0,		INT_MAX,		},
+	// Announce map description [Cydh]
+	{ "map_announce_color",					&battle_config.map_announce_color,				0xB200FF,	0x000000,	0xFFFFFF,	},
+	{ "map_announce_fontsize",				&battle_config.map_announce_fontsize,			12,		10,		32,				},
+
 	/**
 	 * rAthena
 	 **/
