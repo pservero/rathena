@@ -73,6 +73,7 @@
 #define MAX_GUILDLEVEL 50 ///Max Guild level
 #define MAX_GUARDIANS 8	///Local max per castle. If this value is increased, need to add more fields on MySQL `guild_castle` table [Skotlex]
 #define MAX_QUEST_OBJECTIVES 3 ///Max quest objectives for a quest
+#define MAX_PC_BONUS_SCRIPT 20
 
 // for produce
 #define MIN_ATTRIBUTE 0
@@ -89,6 +90,7 @@
 //For character names, title names, guilds, maps, etc.
 //Includes null-terminator as it is the length of the array.
 #define NAME_LENGTH (23 + 1)
+#define PASSWD_LENGTH (32+1)
 //For item names, which tend to have much longer names.
 #define ITEM_NAME_LENGTH 50
 //For Map Names, which the client considers to be 16 in length including the .gat extension
@@ -183,6 +185,32 @@ struct item {
 	unsigned int expire_time;
 	char favorite, bound;
 	uint64 unique_id;
+};
+
+//Equip position constants
+enum equip_pos {
+	EQP_HEAD_LOW         = 0x000001,
+	EQP_HEAD_MID         = 0x000200, // 512
+	EQP_HEAD_TOP         = 0x000100, // 256
+	EQP_HAND_R           = 0x000002, // 2
+	EQP_HAND_L           = 0x000020, // 32
+	EQP_ARMOR            = 0x000010, // 16
+	EQP_SHOES            = 0x000040, // 64
+	EQP_GARMENT          = 0x000004, // 4
+	EQP_ACC_L            = 0x000008, // 8
+	EQP_ACC_R            = 0x000080, // 128
+	EQP_COSTUME_HEAD_TOP = 0x000400, // 1024
+	EQP_COSTUME_HEAD_MID = 0x000800, // 2048
+	EQP_COSTUME_HEAD_LOW = 0x001000, // 4096
+	EQP_COSTUME_GARMENT  = 0x002000, // 8192
+	//EQP_COSTUME_FLOOR  = 0x004000, // 16384
+	EQP_AMMO             = 0x008000, // 32768
+	EQP_SHADOW_ARMOR     = 0x010000, // 65536
+	EQP_SHADOW_WEAPON    = 0x020000, // 131072
+	EQP_SHADOW_SHIELD    = 0x040000, // 262144
+	EQP_SHADOW_SHOES     = 0x080000, // 524288
+	EQP_SHADOW_ACC_R     = 0x100000, // 1048576
+	EQP_SHADOW_ACC_L     = 0x200000, // 2097152
 };
 
 struct point {
@@ -389,6 +417,8 @@ struct mmo_charstatus {
 	// Char server addon system
 	unsigned int character_moves;
 
+	unsigned char font;
+
 	bool cashshop_sent; // Whether the player has received the CashShop list
 };
 
@@ -553,14 +583,14 @@ struct fame_list {
 	char name[NAME_LENGTH];
 };
 
-enum { //Change Guild Infos
+enum e_guild_info { //Change Guild Infos
 	GBI_EXP	=1,		// Guild Experience (EXP)
 	GBI_GUILDLV,		// Guild level
 	GBI_SKILLPOINT,		// Guild skillpoints
 	GBI_SKILLLV,		// Guild skill_lv ?? seem unused
 };
 
-enum { //Change Member Infos
+enum e_guild_member_info { //Change Member Infos
 	GMI_POSITION	=0,
 	GMI_EXP,
 	GMI_HAIR,
@@ -593,7 +623,7 @@ enum e_guild_skill {
 
 
 //These mark the ID of the jobs, as expected by the client. [Skotlex]
-enum {
+enum e_job {
 	JOB_NOVICE,
 	JOB_SWORDMAN,
 	JOB_MAGE,
@@ -751,15 +781,32 @@ enum {
 	JOB_MAX,
 };
 
-enum {
+enum e_sex {
 	SEX_FEMALE = 0,
 	SEX_MALE,
 	SEX_SERVER
 };
 
+/// Item Bound Type
+enum bound_type {
+	BOUND_NONE = 0, /// No bound
+	BOUND_ACCOUNT, /// 1- Account Bound
+	BOUND_GUILD, /// 2 - Guild Bound
+	BOUND_PARTY, /// 3 - Party Bound
+	BOUND_CHAR, /// 4 - Character Bound
+	BOUND_MAX
+};
+
 // sanity checks...
 #if MAX_ZENY > INT_MAX
 #error MAX_ZENY is too big
+#endif
+
+#if (MIN_CHARS + MAX_CHAR_VIP + MAX_CHAR_BILLING) > MAX_CHARS
+#error Config of MAX_CHARS is invalid
+#endif
+#if MIN_STORAGE > MAX_STORAGE
+#error Config of MIN_STORAGE is invalid
 #endif
 
 #endif /* _MMO_H_ */
