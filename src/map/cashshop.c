@@ -27,7 +27,7 @@ extern char item_cash_db2_db[32];
  *  1 = success
  */
 static int cashshop_parse_dbrow( char** str, const char* source, int line ){
-	uint32 nameid = atoi( str[1] );
+	unsigned short nameid = atoi( str[1] );
 
 	if( itemdb_exists( nameid ) ){
 		uint16 tab = atoi( str[0] );
@@ -58,7 +58,7 @@ static int cashshop_parse_dbrow( char** str, const char* source, int line ){
 
 		return 1;
 	}else{
-		ShowWarning( "cashshop_parse_dbrow: Invalid ID %d in line %d of \"%s\", skipping...\n", nameid, line, source );
+		ShowWarning( "cashshop_parse_dbrow: Invalid ID %hu in line %d of \"%s\", skipping...\n", nameid, line, source );
 	}
 
 	return 0;
@@ -216,7 +216,7 @@ bool cashshop_buylist( struct map_session_data* sd, uint32 kafrapoints, int n, u
 	new_ = 0;
 
 	for( i = 0; i < n; ++i ){
-		uint32 nameid = *( item_list + i * 5 );
+		unsigned short nameid = *( item_list + i * 5 );
 		uint32 quantity = *( item_list + i * 5 + 2 );
 		uint16 tab = *( item_list + i * 5 + 4 );
 		int j;
@@ -226,15 +226,16 @@ bool cashshop_buylist( struct map_session_data* sd, uint32 kafrapoints, int n, u
 			return false;
 		}
 
-		ARR_FIND( 0, cash_shop_items[tab].count, j, nameid == cash_shop_items[tab].item[j]->nameid );
+		ARR_FIND( 0, cash_shop_items[tab].count, j, nameid == cash_shop_items[tab].item[j]->nameid || nameid == itemdb_viewid(cash_shop_items[tab].item[j]->nameid) );
+
+		nameid = *( item_list + i * 5 ) = cash_shop_items[tab].item[j]->nameid; //item_avail replacement
 
 		if( j == cash_shop_items[tab].count || !itemdb_exists( nameid ) ){
 			clif_cashshop_result( sd, nameid, CASHSHOP_RESULT_ERROR_UNKONWN_ITEM );
 			return false;
 		}else if( !itemdb_isstackable( nameid ) && quantity > 1 ){
-			uint32* quantity_ptr = (uint32*)item_list + i * 5 + 2;
-			ShowWarning( "Player %s (%d:%d) sent a hexed packet trying to buy %d of nonstackable cash item %d!\n", sd->status.name, sd->status.account_id, sd->status.char_id, quantity, nameid );
-			*quantity_ptr = 1;
+			/* ShowWarning( "Player %s (%d:%d) sent a hexed packet trying to buy %d of nonstackable cash item %hu!\n", sd->status.name, sd->status.account_id, sd->status.char_id, quantity, nameid ); */
+			quantity = *( item_list + i * 5 + 2 ) = 1;
 		}
 
 		switch( pc_checkadditem( sd, nameid, quantity ) ){
@@ -268,12 +269,13 @@ bool cashshop_buylist( struct map_session_data* sd, uint32 kafrapoints, int n, u
 	}
 
 	for( i = 0; i < n; ++i ){
-		uint32 nameid = *( item_list + i * 5 );
+		unsigned short nameid = *( item_list + i * 5 );
 		uint32 quantity = *( item_list + i * 5 + 2 );
 
-		if( itemdb_type( nameid ) == IT_PETEGG ){
-			pet_create_egg( sd, nameid );
-		}else{
+		if (!itemdb_isstackable(nameid) && quantity > 1)
+			quantity = 1;
+
+		if (!pet_create_egg(sd, nameid)) {
 			struct item item_tmp;
 			memset( &item_tmp, 0, sizeof( item_tmp ) );
 

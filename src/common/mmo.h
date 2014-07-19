@@ -73,7 +73,7 @@
 #define MAX_GUILDLEVEL 50 ///Max Guild level
 #define MAX_GUARDIANS 8	///Local max per castle. If this value is increased, need to add more fields on MySQL `guild_castle` table [Skotlex]
 #define MAX_QUEST_OBJECTIVES 3 ///Max quest objectives for a quest
-#define MAX_PC_BONUS_SCRIPT 20
+#define MAX_PC_BONUS_SCRIPT 20 ///Max bonus script
 
 // for produce
 #define MIN_ATTRIBUTE 0
@@ -175,13 +175,13 @@ struct quest {
 
 struct item {
 	int id;
-	short nameid;
+	unsigned short nameid;
 	short amount;
 	unsigned int equip; // location(s) where item is equipped (using enum equip_pos for bitmasking)
 	char identify;
 	char refine;
 	char attribute;
-	short card[MAX_SLOTS];
+	unsigned short card[MAX_SLOTS];
 	unsigned int expire_time;
 	char favorite, bound;
 	uint64 unique_id;
@@ -298,7 +298,7 @@ struct s_pet {
 	short hungry;//pet hungry
 	char name[NAME_LENGTH];
 	char rename_flag;
-	char incuvate;
+	char incubate;
 };
 
 struct s_homunculus {	//[orn]

@@ -30,7 +30,7 @@ extern struct Script_Config {
 	const char *joblvup_event_name;
 	const char *stat_calc_event_name;
 
-	const char *oneshootonekill_event_name; // [Cydh]
+	const char *oneshootonekill_event_name; // [Cydh/PServeRO]
 
 	const char* ontouch_name;
 	const char* ontouch2_name;
@@ -136,8 +136,7 @@ struct script_state {
 	unsigned op2ref : 1;// used by op_2
 	unsigned npc_item_flag : 1;
 	unsigned mes_active : 1;  // Store if invoking character has a NPC dialog box open.
-	unsigned char* funcname; // Stores the current running function name
-	uint8 atcommand_enable_npc;
+	char* funcname; // Stores the current running function name
 };
 
 struct script_reg {

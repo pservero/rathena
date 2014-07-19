@@ -181,7 +181,7 @@ struct s_skill_db {
 		uint8 option;
 		uint16 joballowed, req_opt;
 	} copyable;
-	bool no_canlog_tick; // [Cydh]
+	bool no_canlog_tick; // [Cydh/PServeRO]
 };
 extern struct s_skill_db skill_db[MAX_SKILL_DB];
 
@@ -271,7 +271,8 @@ enum {
 
 /// Create Database item
 struct s_skill_produce_db {
-	int nameid, trigger;
+	unsigned short nameid;
+	int trigger;
 	int req_skill,req_skill_lv,itemlv;
 	int mat_id[MAX_PRODUCE_RESOURCE],mat_amount[MAX_PRODUCE_RESOURCE];
 };
@@ -279,7 +280,8 @@ extern struct s_skill_produce_db skill_produce_db[MAX_SKILL_PRODUCE_DB];
 
 /// Creating database arrow
 struct s_skill_arrow_db {
-	int nameid, trigger;
+	unsigned short nameid;
+	int trigger;
 	int cre_id[MAX_ARROW_RESOURCE],cre_amount[MAX_ARROW_RESOURCE];
 };
 extern struct s_skill_arrow_db skill_arrow_db[MAX_SKILL_ARROW_DB];
@@ -370,7 +372,7 @@ int skill_blown(struct block_list* src, struct block_list* target, int count, in
 int skill_break_equip(struct block_list *src,struct block_list *bl, unsigned short where, int rate, int flag);
 int skill_strip_equip(struct block_list *src,struct block_list *bl, unsigned short where, int rate, int lv, int time);
 // Skills unit
-struct skill_unit_group* skill_id2group(int group_id);
+struct skill_unit_group *skill_id2group(int group_id);
 struct skill_unit_group *skill_unitsetting(struct block_list* src, uint16 skill_id, uint16 skill_lv, short x, short y, int flag);
 struct skill_unit *skill_initunit (struct skill_unit_group *group, int idx, int x, int y, int val1, int val2);
 int skill_delunit(struct skill_unit *unit);
@@ -379,8 +381,8 @@ int skill_delunitgroup_(struct skill_unit_group *group, const char* file, int li
 #define skill_delunitgroup(group) skill_delunitgroup_(group,__FILE__,__LINE__,__func__)
 int skill_clear_unitgroup(struct block_list *src);
 int skill_clear_group(struct block_list *bl, int flag);
-void ext_skill_unit_onplace(struct skill_unit *src, struct block_list *bl, unsigned int tick);
-int64 skill_unit_ondamaged(struct skill_unit *src,struct block_list *bl,int64 damage,unsigned int tick);
+void ext_skill_unit_onplace(struct skill_unit *unit, struct block_list *bl, unsigned int tick);
+int64 skill_unit_ondamaged(struct skill_unit *unit,struct block_list *bl,int64 damage,unsigned int tick);
 
 int skill_castfix( struct block_list *bl, uint16 skill_id, uint16 skill_lv);
 int skill_castfix_sc( struct block_list *bl, int time);
@@ -429,13 +431,13 @@ bool skill_isNotOk_mercenary(uint16 skill_id, struct mercenary_data *md);
 
 bool skill_isNotOk_npcRange(struct block_list *src, uint16 skill_id, uint16 skill_lv, int pos_x, int pos_y);
 
-int skill_chastle_mob_changetarget(struct block_list *bl,va_list ap);
+int skill_changetarget(struct block_list *bl,va_list ap);
 
 // Item creation
-int skill_can_produce_mix( struct map_session_data *sd, int nameid, int trigger, int qty);
-int skill_produce_mix( struct map_session_data *sd, uint16 skill_id, int nameid, int slot1, int slot2, int slot3, int qty );
+int skill_can_produce_mix( struct map_session_data *sd, unsigned short nameid, int trigger, int qty);
+int skill_produce_mix( struct map_session_data *sd, uint16 skill_id, unsigned short nameid, int slot1, int slot2, int slot3, int qty );
 
-int skill_arrow_create( struct map_session_data *sd,int nameid);
+int skill_arrow_create( struct map_session_data *sd, unsigned short nameid);
 
 // skills for the mob
 int skill_castend_nodamage_id( struct block_list *src, struct block_list *bl,uint16 skill_id,uint16 skill_lv,unsigned int tick,int flag );
@@ -1965,7 +1967,7 @@ enum wl_spheres {
 	WLS_WATER,
 	WLS_STONE,
 };
-int skill_spellbook (struct map_session_data *sd, int nameid);
+int skill_spellbook (struct map_session_data *sd, unsigned short nameid);
 int skill_block_check(struct block_list *bl, enum sc_type type, uint16 skill_id);
 /**
  * Guilottine Cross
@@ -1985,11 +1987,11 @@ bool skill_check_camouflage(struct block_list *bl, struct status_change_entry *s
 /**
  * Mechanic
  **/
-int skill_magicdecoy(struct map_session_data *sd, int nameid);
+int skill_magicdecoy(struct map_session_data *sd, unsigned short nameid);
 /**
  * Guiltoine Cross
  **/
-int skill_poisoningweapon( struct map_session_data *sd, int nameid);
+int skill_poisoningweapon( struct map_session_data *sd, unsigned short nameid);
 /**
  * Auto Shadow Spell (Shadow Chaser)
  **/
@@ -1999,10 +2001,11 @@ int skill_elementalanalysis(struct map_session_data *sd, int n, uint16 skill_lv,
 int skill_changematerial(struct map_session_data *sd, int n, unsigned short *item_list);	// Genetic Change Material.
 int skill_get_elemental_type(uint16 skill_id, uint16 skill_lv);
 
+bool skill_is_combo(int skill_id);
 void skill_combo_toogle_inf(struct block_list* bl, uint16 skill_id, int inf);
 void skill_combo(struct block_list* src,struct block_list *dsrc, struct block_list *bl, uint16 skill_id, uint16 skill_lv, int tick);
 
-// Skill map adjustments [Cydh]
+// Skill map adjustments [Cydh/PServeRO]
 int skill_get_maxcount2(uint16 skill_id, uint16 skill_lv, int m);
 int skill_get_cast2(uint16 skill_id, uint16 skill_lv, int m);
 int skill_get_fixed_cast2(uint16 skill_id, uint16 skill_lv, int m);

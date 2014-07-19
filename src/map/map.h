@@ -127,7 +127,7 @@ enum MOBID {
 //First Jobs
 //Note the oddity of the novice:
 //Super Novices are considered the 2-1 version of the novice! Novices are considered a first class type, too...
-enum {
+enum e_mapid {
 //Novice And 1-1 Jobs
 	MAPID_NOVICE = 0x0,
 	MAPID_SWORDMAN,
@@ -304,8 +304,8 @@ enum bl_type {
 enum npc_subtype { WARP, SHOP, SCRIPT, CASHSHOP, ITEMSHOP, POINTSHOP, TOMB };
 
 enum e_race {
-	RC_NONE_=-1, //don't give us bonus
-	RC_FORMLESS=0,
+	RC_NONE_ = -1, //don't give us bonus
+	RC_FORMLESS = 0,
 	RC_UNDEAD,
 	RC_BRUTE,
 	RC_PLANT,
@@ -321,7 +321,7 @@ enum e_race {
 };
 
 enum e_classAE {
-	CLASS_NONE=-1, //don't give us bonus
+	CLASS_NONE = -1, //don't give us bonus
 	CLASS_NORMAL = 0,
 	CLASS_BOSS,
 	CLASS_GUARDIAN,
@@ -340,7 +340,9 @@ enum e_race2 {
 	RC2_MAX
 };
 
-enum e_elemen {
+/// Element list
+enum e_element {
+	ELE_NONE=-1,
 	ELE_NEUTRAL=0,
 	ELE_WATER,
 	ELE_EARTH,
@@ -352,8 +354,10 @@ enum e_elemen {
 	ELE_GHOST,
 	ELE_UNDEAD,
 	ELE_ALL,
-	ELE_NONE
+	ELE_MAX
 };
+
+#define MAX_ELE_LEVEL 4 /// Maximum Element level
 
 enum mob_ai {
 	AI_NONE = 0,
@@ -476,13 +480,13 @@ enum _sp {
 	SP_EMATK, SP_SP_GAIN_RACE_ATTACK, SP_HP_GAIN_RACE_ATTACK, SP_SKILL_USE_SP_RATE, //2046-2049
 	SP_SKILL_COOLDOWN,SP_SKILL_FIXEDCAST, SP_SKILL_VARIABLECAST, SP_FIXCASTRATE, SP_VARCASTRATE, //2050-2054
 	SP_SKILL_USE_SP,SP_MAGIC_ATK_ELE, SP_ADD_FIXEDCAST, SP_ADD_VARIABLECAST,  //2055-2058
-	SP_DEF_SET,SP_MDEF_SET,SP_HP_VANISH_RATE,  //2059-2061
+	SP_SET_DEF_RACE,SP_SET_MDEF_RACE,SP_HP_VANISH_RATE,  //2059-2061
 
 	SP_IGNORE_DEF_CLASS, SP_DEF_RATIO_ATK_CLASS, SP_ADDCLASS, SP_SUBCLASS, SP_MAGIC_ADDCLASS, //2062-2066
 	SP_WEAPON_COMA_CLASS, SP_IGNORE_MDEF_CLASS_RATE, SP_EXP_ADDCLASS, SP_ADD_CLASS_DROP_ITEM, //2067-2070
 	SP_ADD_CLASS_DROP_ITEMGROUP, SP_ADDMAXWEIGHT, SP_ADD_ITEMGROUP_HEAL_RATE  // 2071-2073
 
-	// Custom Bonuses [PServeRO]
+	// Custom Bonuses [Cydh/PServeRO]
 	, SP_ONESHOOTONEKILL_CLASS = 2084, SP_ONESHOOTONEKILL_RACE, SP_ONESHOOTONEKILL_MOB, SP_SUB_ONESHOOTONEKILL
 	, SP_SKILL_NO_REQUIRE = 2089, SP_SKILL_NO_REQUIRE_ITEM, SP_NO_REQUIRE_AMMO
 };
@@ -587,7 +591,7 @@ struct s_skill_damage {
 #endif
 #define MAX_MAP_SKILL_MODIFIER 20
 
-/// [Cydh]
+/// [Cydh/PServeRO]
 /// Struct of skill maxcount on each map
 struct s_map_skill_adjust {
 	uint16 skill_id;
@@ -672,7 +676,7 @@ struct map_data {
 		unsigned nomineeffect : 1; //allow /mineeffect
 		unsigned nolockon : 1;
 		unsigned notomb : 1;
-		// Skill map adjustments [Cydh]
+		// Skill map adjustments [Cydh/PServeRO]
 		unsigned skill_maxcount : 1;
 		unsigned skill_cast : 1;
 		unsigned skill_fixed_cast : 1;
@@ -684,7 +688,7 @@ struct map_data {
 #ifdef ADJUST_SKILL_DAMAGE
 		unsigned skill_damage : 1;
 #endif
-		unsigned atk_rate : 1; // Global Damage adjustment. [Cydh]
+		unsigned atk_rate : 1; // Global Damage adjustment. [Cydh/PServeRO]
 	} flag;
 	struct point save;
 	struct npc_data *npc[MAX_NPC_PER_MAP];
@@ -704,7 +708,7 @@ struct map_data {
 #ifdef ADJUST_SKILL_DAMAGE
 		struct s_skill_damage damage;
 #endif
-		// Skill map adjustments [Cydh]
+		// Skill map adjustments [Cydh/PServeRO]
 		struct s_map_skill_adjust
 			skill_maxcount[MAX_MAP_SKILL_MODIFIER],
 			skill_cast[MAX_MAP_SKILL_MODIFIER],
@@ -714,7 +718,7 @@ struct map_data {
 			skill_duration[MAX_MAP_SKILL_MODIFIER],
 			skill_duration2[MAX_MAP_SKILL_MODIFIER],
 			skill_cooldown[MAX_MAP_SKILL_MODIFIER];
-		//Global Damage Adjustment [Cydh]
+		//Global Damage Adjustment [Cydh/PServeRO]
 		uint16 atk_short_damage_rate,
 			atk_long_damage_rate,
 			atk_weapon_damage_rate,
@@ -727,7 +731,7 @@ struct map_data {
 #endif
 
 #ifdef DISPLAY_MAP_DESC
-	// [Cydh]
+	// [Cydh/PServeRO]
 	char desc[CHAT_SIZE_MAX];
 	unsigned long desc_color;
 #endif
@@ -847,6 +851,7 @@ struct block_list * map_id2bl(int id);
 bool map_blid_exists( int id );
 
 #define map_id2index(id) map[(id)].index
+const char* map_mapid2mapname(int m);
 int16 map_mapindex2mapid(unsigned short mapindex);
 int16 map_mapname2mapid(const char* name);
 int map_mapname2ipport(unsigned short name, uint32* ip, uint16* port);
@@ -909,6 +914,12 @@ void map_removemobs(int16 m); // [Wizputer]
 void do_reconnect_map(void); //Invoked on map-char reconnection [Skotlex]
 void map_addmap2db(struct map_data *m);
 void map_removemapdb(struct map_data *m);
+
+#define CHK_ELEMENT(ele) ((ele) > ELE_NONE && (ele) < ELE_MAX) /// Check valid Element
+#define CHK_ELEMENT_LEVEL(lv) ((lv) >= 1 && (lv) <= MAX_ELE_LEVEL) /// Check valid element level
+#define CHK_RACE(race) ((race) > RC_NONE_ && (race) < RC_MAX) /// Check valid Race
+#define CHK_RACE2(race2) ((race2) >= RC2_NONE && (race2) < RC2_MAX) /// Check valid Race2
+#define CHK_CLASS(class_) ((class_) > CLASS_NONE && (class_) < CLASS_MAX) /// Check valid Class
 
 //Options read in cli
 extern char *INTER_CONF_NAME;

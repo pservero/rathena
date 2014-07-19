@@ -287,12 +287,12 @@ int chrif_save(struct map_session_data *sd, int flag) {
 
 	if (flag && sd->state.active) { //Store player data which is quitting
 		//FIXME: SC are lost if there's no connection at save-time because of the way its related data is cleared immediately after this function. [Skotlex]
-	if (chrif_isconnected()) {
-		chrif_save_scdata(sd);
-		chrif_skillcooldown_save(sd);
-		chrif_save_bsdata(sd);
-		chrif_req_login_operation(sd->status.account_id, sd->status.name, 7, 0, 2, sd->status.bank_vault); //save Bank data
-	}
+		if (chrif_isconnected()) {
+			chrif_save_scdata(sd);
+			chrif_skillcooldown_save(sd);
+			chrif_save_bsdata(sd);
+			chrif_req_login_operation(sd->status.account_id, sd->status.name, 7, 0, 2, sd->status.bank_vault); //save Bank data
+		}
 		if ( flag != 3 && !chrif_auth_logout(sd,flag == 1 ? ST_LOGOUT : ST_MAPCHANGE) )
 			ShowError("chrif_save: Failed to set up player %d:%d for proper quitting!\n", sd->status.account_id, sd->status.char_id);
 	}
@@ -1378,12 +1378,6 @@ int chrif_load_scdata(int fd) {
 
 	pc_scdata_received(sd);
 #endif
-
-	if( sd->state.autotrade ) {
-		buyingstore_reopen( sd );
-		vending_reopen( sd );
-	}
-
 	return 0;
 }
 
@@ -1819,11 +1813,11 @@ int chrif_save_bsdata(struct map_session_data *sd) {
 	WFIFOW(char_fd,0) = 0x2b2e;
 	WFIFOL(char_fd,4) = sd->status.char_id;
 	
-	i = BONUS_FLAG_REM_ON_LOGOUT; //Remove bonus with this flag
+	i = BSF_REM_ON_LOGOUT; //Remove bonus with this flag
 	if (battle_config.debuff_on_logout&1) //Remove negative buffs
-		i |= BONUS_FLAG_REM_DEBUFF;
+		i |= BSF_REM_DEBUFF;
 	if (battle_config.debuff_on_logout&2) //Remove positive buffs
-		i |= BONUS_FLAG_REM_BUFF;
+		i |= BSF_REM_BUFF;
 	
 	//Clear data that won't be stored
 	pc_bonus_script_clear(sd,i);
@@ -1843,8 +1837,7 @@ int chrif_save_bsdata(struct map_session_data *sd) {
 		bs.icon = sd->bonus_script[i].icon;
 
 		memcpy(WFIFOP(char_fd,10+count*sizeof(struct bonus_script_data)),&bs,sizeof(struct bonus_script_data));
-		delete_timer(sd->bonus_script[i].tid,pc_bonus_script_timer);
-		pc_bonus_script_remove(sd,i);
+		pc_bonus_script_remove(&sd->bonus_script[i]);
 		count++;
 	}
 

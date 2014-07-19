@@ -102,8 +102,14 @@ struct mob_db {
 	short range2,range3;
 	short race2;	// celest
 	unsigned short lv;
-	struct { int nameid,p; } dropitem[MAX_MOB_DROP];
-	struct { int nameid,p; } mvpitem[MAX_MVP_DROP];
+	struct {
+		unsigned short nameid;
+		int p;
+	} dropitem[MAX_MOB_DROP];
+	struct {
+		unsigned short nameid;
+		int p;
+	} mvpitem[MAX_MVP_DROP];
 	struct status_data status;
 	struct view_data vd;
 	unsigned int option;
@@ -125,7 +131,7 @@ struct mob_data {
 		unsigned int size : 2; //Small/Big monsters.
 		enum mob_ai ai; //Special ai for summoned monsters.
 		unsigned int clone : 1;/* is clone? 1:0 */
-		uint8 flag; // [Cydh]
+		uint8 flag; // [Cydh/PServeRO]
 	} special_state; //Special mob information that does not needs to be zero'ed on mob respawn.
 	struct {
 		unsigned int aggressive : 1; //Signals whether the mob AI is in aggressive mode or reactive mode. [Skotlex]
@@ -309,5 +315,7 @@ void mob_reload(void);
 // MvP Tomb System
 void mvptomb_create(struct mob_data *md, char *killer, time_t time);
 void mvptomb_destroy(struct mob_data *md);
+
+#define CHK_MOBSIZE(size) ((size) >= SZ_SMALL && (size) < SZ_MAX) /// Check valid Monster Size
 
 #endif /* _MOB_H_ */
