@@ -1,6 +1,11 @@
 // Skill that listed here won't trigger the 'canlog_tick' of player
-// <SkillName or SkillID>
 // [Cydh] house.bad@gmail.com
+// http://pservero.com/
+//
+// Structure:
+//    <SkillName or SkillID>
+//
+
 //AL_WARP
 //MC_IDENTIFY
 //MC_VENDING
