@@ -1179,6 +1179,11 @@ static bool itemdb_parse_dbrow(char** str, const char* source, int line, int scr
 		ShowWarning("itemdb_parse_dbrow: Buying/Selling [%d/%d] price of item %hu (%s) allows Zeny making exploit  through buying/selling at discounted/overcharged prices!\n",
 			id->value_buy, id->value_sell, nameid, id->jname);
 
+#ifdef PROJECT_BOUND // [Cydh]
+	id->bound_buy_price = id->value_buy;
+	id->bound_sell_price = id->value_sell;
+#endif
+
 	id->weight = atoi(str[6]);
 #ifdef RENEWAL
 	itemdb_re_split_atoi(str[7],&id->atk,&id->matk);
@@ -1497,6 +1502,36 @@ bool itemdb_isNoEquip(struct item_data *id, uint16 m) {
 	return false;
 }
 
+#ifdef PROJECT_BOUND // [Cydh]
+static bool itemdb_read_bound_price(char* str[], int columns, int current) {
+	unsigned short nameid = atoi(str[0]), price = 0;
+	struct item_data *id;
+
+	if (!(id = itemdb_exists(nameid))) {
+		ShowError("itemdb_read_bound_price: Invalid item with ID '%d'\n", nameid);
+		return false;
+	}
+
+	// Buy price
+	if (atoi(str[1]) >= 0)
+		price = atoi(str[1]);
+	else
+		price = apply_rate(id->value_buy,-atoi(str[1]));
+	id->bound_buy_price = price;
+	
+	// Sell price
+	if (atoi(str[2]) > 0)
+		price = atoi(str[2]);
+	else
+		price = id->bound_buy_price/2;
+	id->bound_sell_price = price;
+
+	if (id->bound_sell_price > id->bound_buy_price)
+		ShowWarning("itemdb_read_bound_price: "CL_WHITE"%d"CL_RESET" sell price (%d) higher than buy price (%d).\n", nameid, id->bound_sell_price, id->bound_buy_price);
+	return true;
+}
+#endif
+
 /**
 * Read all item-related databases
 */
@@ -1539,6 +1574,9 @@ static void itemdb_read(void) {
 		sv_readdb(dbsubpath2, "item_delay.txt",         ',', 2, 2, -1, &itemdb_read_itemdelay, i);
 		sv_readdb(dbsubpath2, "item_buyingstore.txt",   ',', 1, 1, -1, &itemdb_read_buyingstore, i);
 		sv_readdb(dbsubpath2, "item_flag.txt",          ',', 2, 2, -1, &itemdb_read_flag, i);
+#ifdef PROJECT_BOUND // [Cydh]
+		sv_readdb(dbsubpath1, "item_bound_price.txt",   ',', 2, 3, -1, &itemdb_read_bound_price, i);
+#endif
 		aFree(dbsubpath1);
 		aFree(dbsubpath2);
 	}

@@ -7028,6 +7028,10 @@ ACMD_FUNC(mobinfo)
 				sprintf(atcmd_output2, " - %s[%d]  %02.02f%%", item_data->jname, item_data->slot, (float)droprate / 100);
 			else
 				sprintf(atcmd_output2, " - %s  %02.02f%%", item_data->jname, (float)droprate / 100);
+#ifdef PROJECT_BOUND // [Cydh]
+			if (mob->dropitem[i].isbound)
+				strcat(atcmd_output2, " (Bound)");
+#endif
 			strcat(atcmd_output, atcmd_output2);
 			if (++j % 3 == 0) {
 				clif_displaymessage(fd, atcmd_output);
@@ -7068,6 +7072,45 @@ ACMD_FUNC(mobinfo)
 			else
 				clif_displaymessage(fd, atcmd_output);
 		}
+#ifdef PROJECT_BOUND // [Cydh]
+		// Bound Drop
+		j = 0;
+		clif_displaymessage(fd, "Bound Item Drops:");
+		memset(atcmd_output, '\0', sizeof(atcmd_output));
+		for (i = 0; i < mob->bound_dropcount; i++) {
+			unsigned int droprate;
+
+			if (!mob->bound_droplist[i])
+				continue;
+
+			if (mob->bound_droplist[i]->nameid <= 0 || mob->bound_droplist[i]->rate < 1 || (item_data = itemdb_exists(mob->bound_droplist[i]->nameid)) == NULL)
+				continue;
+			droprate = mob->bound_droplist[i]->rate;
+
+#ifdef RENEWAL_DROP
+			if (battle_config.atcommand_mobinfo_type) {
+				droprate = droprate * pc_level_penalty_mod(sd, mob->lv, mob->status.class_, 2) / 100;
+				if (droprate <= 0 && !battle_config.drop_rate0item)
+						droprate = 1;
+			}
+#endif
+			if (item_data->slot)
+				sprintf(atcmd_output2, " - %s[%d]  %02.02f%%", item_data->jname, item_data->slot, (float)droprate / 100);
+			else
+				sprintf(atcmd_output2, " - %s  %02.02f%%", item_data->jname, (float)droprate / 100);
+			strcat(atcmd_output, atcmd_output2);
+
+			if (++j % 3 == 0) {
+				clif_displaymessage(fd, atcmd_output);
+				strcpy(atcmd_output, " ");
+			}
+		}
+
+		if (j == 0)
+			clif_displaymessage(fd, msg_txt(sd,1246)); // This monster has no drops.
+		else if (j % 3 != 0)
+			clif_displaymessage(fd, atcmd_output);
+#endif
 	}
 	return 0;
 }
@@ -7501,6 +7544,19 @@ ACMD_FUNC(iteminfo)
 			strcpy(atcmd_output, msg_txt(sd,1283)); //  - Monsters don't drop this item.
 		clif_displaymessage(fd, atcmd_output);
 
+#ifdef PROJECT_BOUND // [Cydh]
+		clif_displaymessage(fd, "Bound Info:");
+		sprintf(atcmd_output, msg_txt(sd,1280), item_data->bound_buy_price, item_data->bound_sell_price, item_data->weight/10. ); // NPC Buy:%dz, Sell:%dz | Weight: %.1f
+		clif_displaymessage(fd, atcmd_output);
+		if (item_data->bound_drop_maxchance == -1)
+			strcpy(atcmd_output, msg_txt(sd,1281)); //  - Available in the shops only.
+		else if (!battle_config.atcommand_mobinfo_type && item_data->bound_drop_maxchance)
+			sprintf(atcmd_output, msg_txt(sd,1282), (float)item_data->bound_drop_maxchance / 100 ); //  - Maximal monsters drop chance: %02.02f%%
+		else
+			strcpy(atcmd_output, msg_txt(sd,1283)); //  - Monsters don't drop this item.
+		clif_displaymessage(fd, atcmd_output);
+#endif
+
 	}
 	return 0;
 }
@@ -7559,6 +7615,28 @@ ACMD_FUNC(whodrops)
 				clif_displaymessage(fd, atcmd_output);
 			}
 		}
+#ifdef PROJECT_BOUND // [Cydh]
+		clif_displaymessage(fd, "Bound Drop Info:");
+		if (item_data->bound_drop[0].chance == 0) {
+			strcpy(atcmd_output, msg_txt(sd,1286)); //  - Item is not dropped by mobs.
+			clif_displaymessage(fd, atcmd_output);
+		} else {
+			sprintf(atcmd_output, msg_txt(sd,1287), MAX_SEARCH); //  - Common mobs with highest drop chance (only max %d are listed):
+			clif_displaymessage(fd, atcmd_output);
+
+			for (j=0; j < MAX_SEARCH && item_data->bound_drop[j].chance > 0; j++)
+			{
+				int dropchance = item_data->bound_drop[j].chance;
+
+#ifdef RENEWAL_DROP
+				if( battle_config.atcommand_mobinfo_type )
+					dropchance = dropchance * pc_level_penalty_mod(sd, mob_db(item_data->bound_drop[j].mob_id)->lv, mob_db(item_data->bound_drop[j].mob_id)->status.class_,  2) / 100;
+#endif
+				sprintf(atcmd_output, "- %s (%02.02f%%)", mob_db(item_data->bound_drop[j].mob_id)->jname, dropchance/100.);
+				clif_displaymessage(fd, atcmd_output);
+			}
+		}
+#endif
 	}
 	return 0;
 }

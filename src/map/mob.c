@@ -1804,13 +1804,20 @@ static int mob_ai_hard(int tid, unsigned int tick, int id, intptr_t data)
 /*==========================================
  * Initializes the delay drop structure for mob-dropped items.
  *------------------------------------------*/
+#ifdef PROJECT_BOUND // [Cydh]
+static struct item_drop* mob_setdropitem(unsigned short nameid, int qty, bool bound)
+#else
 static struct item_drop* mob_setdropitem(unsigned short nameid, int qty)
+#endif
 {
 	struct item_drop *drop = ers_alloc(item_drop_ers, struct item_drop);
 	memset(&drop->item_data, 0, sizeof(struct item));
 	drop->item_data.nameid = nameid;
 	drop->item_data.amount = qty;
 	drop->item_data.identify = itemdb_isidentified(nameid);
+#ifdef PROJECT_BOUND // [Cydh]
+	drop->item_data.bound = bound;
+#endif
 	drop->next = NULL;
 	return drop;
 }
@@ -1866,7 +1873,11 @@ static void mob_item_drop(struct mob_data *md, struct item_drop_list *dlist, str
 	if( sd == NULL ) sd = map_charid2sd(dlist->third_charid);
 
 	if( sd
+#ifdef PROJECT_BOUND // [Cydh]
+		&& (ditem->item_data.bound || drop_rate <= sd->state.autoloot || pc_isautolooting(sd, ditem->item_data.nameid))
+#else
 		&& (drop_rate <= sd->state.autoloot || pc_isautolooting(sd, ditem->item_data.nameid))
+#endif
 		&& (battle_config.idle_no_autoloot == 0 || DIFF_TICK(last_tick, sd->idletime) < battle_config.idle_no_autoloot)
 		&& (battle_config.homunculus_autoloot?1:!flag)
 #ifdef AUTOLOOT_DISTANCE
@@ -2419,7 +2430,11 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
 				continue;
 			}
 
+#ifdef PROJECT_BOUND // [Cydh]
+			ditem = mob_setdropitem(md->db->dropitem[i].nameid, 1, md->db->dropitem[i].isbound);
+#else
 			ditem = mob_setdropitem(md->db->dropitem[i].nameid, 1);
+#endif
 
 			//A Rare Drop Global Announce by Lupus
 			if( mvp_sd && drop_rate <= battle_config.rare_drop_announce ) {
@@ -2433,9 +2448,86 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
 			mob_item_drop(md, dlist, ditem, 0, md->db->dropitem[i].p, homkillonly);
 		}
 
+#ifdef PROJECT_BOUND // [Cydh]
+		// Bound Drops
+		for (i = 0; i < md->db->bound_dropcount; i++) {
+			if (!md->db->bound_droplist[i] || !md->db->bound_droplist[i]->nameid)
+				continue;
+			if ( !(it = itemdb_exists(md->db->bound_droplist[i]->nameid)) )
+				continue;
+			drop_rate = md->db->bound_droplist[i]->rate;
+			if (drop_rate <= 0) {
+				if (battle_config.drop_rate0item)
+					continue;
+				drop_rate = 1;
+			}
+
+			// change drops depending on monsters size [Valaris]
+			if (battle_config.mob_size_influence) {
+				if (md->special_state.size == SZ_MEDIUM && drop_rate >= 2)
+					drop_rate /= 2;
+				else if( md->special_state.size == SZ_BIG)
+					drop_rate *= 2;
+			}
+
+			if (src) {
+				//Drops affected by luk as a fixed increase [Valaris]
+				if (battle_config.drops_by_luk)
+					drop_rate += status_get_luk(src)*battle_config.drops_by_luk/100;
+				//Drops affected by luk as a % increase [Skotlex]
+				if (battle_config.drops_by_luk2)
+					drop_rate += (int)(0.5+drop_rate*status_get_luk(src)*battle_config.drops_by_luk2/10000.);
+			}
+			if (sd && battle_config.pk_mode &&
+				(int)(md->level - sd->status.base_level) >= 20)
+				drop_rate = (int)(drop_rate*1.25); // pk_mode increase drops if 20 level difference [Valaris]
+
+			// Increase drop rate if user has SC_ITEMBOOST
+			if (sd && sd->sc.data[SC_ITEMBOOST]) // now rig the drop rate to never be over 90% unless it is originally >90%.
+				drop_rate = max(drop_rate,cap_value((int)(0.5+drop_rate*(sd->sc.data[SC_ITEMBOOST]->val1)/100.),0,9000));
+			// Increase item drop rate for VIP.
+			if (battle_config.vip_drop_increase && (sd && pc_isvip(sd))) {
+				drop_rate += (int)(0.5 + (drop_rate * battle_config.vip_drop_increase) / 10000.);
+				drop_rate = min(drop_rate,10000); //cap it to 100%
+			}
+#ifdef RENEWAL_DROP
+			if( drop_modifier != 100 ) {
+				drop_rate = drop_rate * drop_modifier / 100;
+				if( drop_rate < 1 )
+					drop_rate = 1;
+			}
+#endif
+			// attempt to drop the item
+			if (rnd() % 10000 >= drop_rate)
+				continue;
+
+			if( mvp_sd && it->type == IT_PETEGG ) {
+				pet_create_egg(mvp_sd, md->db->bound_droplist[i]->nameid);
+				continue;
+			}
+
+			ditem = mob_setdropitem(md->db->bound_droplist[i]->nameid, 1, true);
+
+			//A Rare Drop Global Announce by Lupus
+			if( mvp_sd && drop_rate <= battle_config.rare_drop_announce ) {
+				char message[128];
+				sprintf (message, msg_txt(NULL,541), mvp_sd->status.name, md->name, it->jname, (float)drop_rate/100);
+				//MSG: "'%s' won %s's %s (chance: %0.02f%%)"
+				intif_broadcast(message,strlen(message)+1,BC_DEFAULT);
+			}
+			// Announce first, or else ditem will be freed. [Lance]
+			// By popular demand, use base drop rate for autoloot code. [Skotlex]
+			mob_item_drop(md, dlist, ditem, 0, md->db->bound_droplist[i]->rate, homkillonly);
+		}
+#endif
+
 		// Ore Discovery [Celest]
 		if (sd == mvp_sd && pc_checkskill(sd,BS_FINDINGORE)>0 && battle_config.finding_ore_rate/10 >= rnd()%10000) {
+#ifdef PROJECT_BOUND // [Cydh]
+			ditem = mob_setdropitem(itemdb_searchrandomid(IG_FINDINGORE,1), 1, false);
+#else
 			ditem = mob_setdropitem(itemdb_searchrandomid(IG_FINDINGORE,1), 1);
+#endif
 			mob_item_drop(md, dlist, ditem, 0, battle_config.finding_ore_rate/10, homkillonly);
 		}
 
@@ -2465,7 +2557,11 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type)
 						continue;
 					dropid = (sd->add_drop[i].nameid > 0) ? sd->add_drop[i].nameid : itemdb_searchrandomid(sd->add_drop[i].group,1);
 
+#ifdef PROJECT_BOUND // [Cydh]
+					mob_item_drop(md, dlist, mob_setdropitem(dropid,1,false), 0, drop_rate, homkillonly);
+#else
 					mob_item_drop(md, dlist, mob_setdropitem(dropid,1), 0, drop_rate, homkillonly);
+#endif
 				}
 			}
 
@@ -3695,6 +3791,179 @@ static void item_dropratio_adjust(unsigned short nameid, int mob_id, int *rate_a
 	}
 }
 
+#ifdef PROJECT_BOUND // [Cydh]
+/**
+* Add bound drop to monster db
+* @param db mob_db*
+* @param nameid Item ID
+* @param rate Drop rate
+* @author Cydh
+*/
+void mob_bound_drop_add(struct mob_db *db, unsigned short nameid, short rate) {
+	struct s_bound_drop_entry *entry;
+	struct item_data *id;
+	unsigned short i, j;
+	unsigned int ratemin = 1, ratemax = 1, rate_adjust = 0;
+
+	if (!db) {
+		ShowError("mob_bound_drop_add: Cannot add new entry for item list %d rate %d.\n", nameid, rate);
+		return;
+	}
+
+	for (i = 0; i < db->bound_dropcount; i++) {
+		if (db->bound_droplist[i]->nameid == nameid) {
+			ShowError("mob_bound_drop_add: Item %d already listed for monster id %d.\n", nameid, db->vd.class_);
+			return;
+		}
+	}
+
+	if (i >= UINT8_MAX) {
+		ShowError("mob_bound_drop_add: Reached max (%d) possible drop list of bound item for monster id %d.\n", UINT8_MAX, db->vd.class_);
+		return;
+	}
+
+	if (!(id = itemdb_exists(nameid))) {
+		ShowError("mob_bound_drop_add: Invalid item ID %d in drop list of bound item for monster id %d.\n", nameid, db->vd.class_);
+		return;
+	}
+
+	// Create new drop
+	entry = ers_alloc(mob_bound_drop_ers, struct s_bound_drop_entry);
+	entry->nameid = nameid;
+	
+	if (battle_config.drop_rateincrease) {
+		if (rate < 5000)
+			rate++;
+	}
+	else {
+		struct status_data *status = &db->status;
+		switch (id->type) {
+			case IT_HEALING:
+				rate_adjust = (status->mode&MD_BOSS) ? battle_config.item_rate_heal_boss : battle_config.item_rate_heal;
+				ratemin = battle_config.item_drop_heal_min;
+				ratemax = battle_config.item_drop_heal_max;
+				break;
+			case IT_USABLE:
+			case IT_CASH:
+				rate_adjust = (status->mode&MD_BOSS) ? battle_config.item_rate_use_boss : battle_config.item_rate_use;
+				ratemin = battle_config.item_drop_use_min;
+				ratemax = battle_config.item_drop_use_max;
+				break;
+			case IT_WEAPON:
+			case IT_ARMOR:
+			case IT_PETARMOR:
+				rate_adjust = (status->mode&MD_BOSS) ? battle_config.item_rate_equip_boss : battle_config.item_rate_equip;
+				ratemin = battle_config.item_drop_equip_min;
+				ratemax = battle_config.item_drop_equip_max;
+				break;
+			case IT_CARD:
+				rate_adjust = (status->mode&MD_BOSS) ? battle_config.item_rate_card_boss : battle_config.item_rate_card;
+				ratemin = battle_config.item_drop_card_min;
+				ratemax = battle_config.item_drop_card_max;
+				break;
+			default:
+				rate_adjust = (status->mode&MD_BOSS) ? battle_config.item_rate_common_boss : battle_config.item_rate_common;
+				ratemin = battle_config.item_drop_common_min;
+				ratemax = battle_config.item_drop_common_max;
+				break;
+		}
+	}
+	entry->rate = mob_drop_adjust(rate, rate_adjust, ratemin, ratemax);
+
+	// Calculate and store Max available drop chance of the item
+	if (id->bound_drop_maxchance == -1 || (id->bound_drop_maxchance < entry->rate) ) {
+		id->bound_drop_maxchance = entry->rate; // Item has bigger drop chance or sold in shops
+	}
+	for (j = 0; j < MAX_SEARCH; j++) {
+		if (id->bound_drop[j].chance <= entry->rate) {
+			if (id->bound_drop[j].mob_id != db->vd.class_)
+				memmove(&id->bound_drop[j+1], &id->bound_drop[j], (MAX_SEARCH-j-1)*sizeof(id->bound_drop[0]));
+			id->bound_drop[j].chance = entry->rate;
+			id->bound_drop[j].mob_id = db->vd.class_;
+			break;
+		}
+	}
+
+	RECREATE(db->bound_droplist, struct s_bound_drop_entry *, db->bound_dropcount+1);
+	db->bound_droplist[db->bound_dropcount++] = entry;
+}
+
+void mob_split_atoi(char *str, int *val) {
+	char i = 0;
+
+	while (str != NULL && i < 2) {
+		trim(str);
+		val[i] = atoi(str);
+		//printf("%d:",val[i]);
+		str = strchr(str,':');
+		if (!str)
+			break;
+		str++;
+		i++;
+	}
+	//printf("<>");
+}
+
+static bool mob_readdb_bound_drop(char* str[], int columns, int current) {
+	unsigned short mob_id = 0;
+	struct mob_db *db = NULL;
+	char *p, flag = 0;
+
+	mob_id = (unsigned short)atoi(str[0]);
+
+	if ((db = mob_db(mob_id)) == mob_dummy) {
+		ShowWarning("mob_readdb_bound_drop: Unknown mob id %d.\n", mob_id);
+		return false;
+	}
+
+	if (flag = atoi(str[1])) {
+		if (flag == 1) {
+			unsigned char i;
+			for (i = 0; i < MAX_MOB_DROP; i++)
+				db->dropitem[i].isbound = true;
+			ShowInfo("All drops from "CL_WHITE"%s (%d)"CL_RESET" become "CL_YELLOW"bound"CL_RESET" item.\n", db->name, mob_id);
+		}
+		else if (flag == 2) {
+			memset(db->dropitem, 0, sizeof(db->dropitem));
+			ShowInfo("All drops from "CL_WHITE"%s (%d)"CL_RESET" are "CL_RED"cleared"CL_RESET".\n", db->name, mob_id);
+		}
+	}
+
+	p = str[2];
+	while (p) {
+		int val[2];
+		//printf("%s=>",p);
+		mob_split_atoi(p, val);
+		if (val[0])
+			mob_bound_drop_add(db, val[0], val[1]);
+		//printf("\n");
+		p = strchr(p,'#');
+		if (!p)
+			break;
+		p++;
+	}
+	//printf("\n");
+
+	return true;
+}
+
+/**
+* Clear bound drop from monster
+* @param db mob_db*
+* @author Cydh
+*/
+void mob_bound_drop_clear(struct mob_db *db) {
+	if (db && db->bound_dropcount && db->bound_droplist) {
+		unsigned char i;
+		for (i = 0; i < db->bound_dropcount; i++)
+			ers_free(mob_bound_drop_ers, db->bound_droplist[i]);
+		db->bound_dropcount = 0;
+		aFree(db->bound_droplist);
+		db->bound_droplist = NULL;
+	}
+}
+#endif
+
 /*==========================================
  * processes one mobdb entry
  *------------------------------------------*/
@@ -3937,6 +4206,10 @@ static bool mob_parse_dbrow(char** str)
 			id->mob[k].id = mob_id;
 		}
 	}
+
+#ifdef PROJECT_BOUND // [Cydh]
+	mob_bound_drop_clear(db);
+#endif
 
 	// Finally insert monster's data into the database.
 	if (mob_db_data[mob_id] == NULL)
@@ -4613,6 +4886,10 @@ static void mob_load(void)
 		}
 		sv_readdb(dbsubpath1, "mob_avail.txt", ',', 2, 12, -1, &mob_readdb_mobavail, i);
 		sv_readdb(dbsubpath2, "mob_race2_db.txt", ',', 2, 20, -1, &mob_readdb_race2, i);
+
+#ifdef PROJECT_BOUND
+		sv_readdb(dbsubpath1, "mob_bound_drop.txt", ',', 2, 3, -1, &mob_readdb_bound_drop, i);
+#endif
 		
 		aFree(dbsubpath1);
 		aFree(dbsubpath2);
@@ -4626,6 +4903,9 @@ void mob_reload(void) {
 	//Mob skills need to be cleared before re-reading them. [Skotlex]
 	for (i = 0; i < MAX_MOB_DB; i++) {
 		if (mob_db_data[i]) {
+#ifdef PROJECT_BOUND // [Cydh]
+			mob_bound_drop_clear(mob_db_data[i]);
+#endif
 			memset(&mob_db_data[i]->skill,0,sizeof(mob_db_data[i]->skill));
 			mob_db_data[i]->maxskill=0;
 		}
@@ -4654,6 +4934,9 @@ void do_init_mob(void){
 	mob_makedummymobdb(0); //The first time this is invoked, it creates the dummy mob
 	item_drop_ers = ers_new(sizeof(struct item_drop),"mob.c::item_drop_ers",ERS_OPT_NONE);
 	item_drop_list_ers = ers_new(sizeof(struct item_drop_list),"mob.c::item_drop_list_ers",ERS_OPT_NONE);
+#ifdef PROJECT_BOUND // [Cydh]
+	mob_bound_drop_ers = ers_new(sizeof(struct s_bound_drop_entry), "mob.c:mob_bound_drop_ers", ERS_OPT_NONE);
+#endif
 	mob_item_drop_ratio = idb_alloc(DB_OPT_BASE);
 	mob_load();
 
@@ -4682,6 +4965,9 @@ void do_final_mob(void){
 	{
 		if (mob_db_data[i] != NULL)
 		{
+#ifdef PROJECT_BOUND // [Cydh]
+			mob_bound_drop_clear(mob_db_data[i]);
+#endif
 			aFree(mob_db_data[i]);
 			mob_db_data[i] = NULL;
 		}
@@ -4697,4 +4983,7 @@ void do_final_mob(void){
 	mob_item_drop_ratio->destroy(mob_item_drop_ratio,mob_item_drop_ratio_free);
 	ers_destroy(item_drop_ers);
 	ers_destroy(item_drop_list_ers);
+#ifdef PROJECT_BOUND // [Cydh]
+	ers_destroy(mob_bound_drop_ers);
+#endif
 }

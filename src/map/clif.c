@@ -1778,6 +1778,11 @@ void clif_buylist(struct map_session_data *sd, struct npc_data *nd)
 	WFIFOW(fd,0) = 0xc6;
 
 	c = 0;
+#ifdef PROJECT_BOUND // [Cydh]
+	if (nd->subtype == POINTSHOP && strcmp(nd->u.shop.pointshop_str,PROJECT_BOUND_ZENY) == 0)
+		discount = false;
+	else
+#endif
 	discount = npc_shop_discount(nd->subtype,nd->u.shop.discount);
 	for( i = 0; i < nd->u.shop.count; i++ )
 	{
@@ -1815,17 +1820,36 @@ void clif_selllist(struct map_session_data *sd)
 			if( !itemdb_cansell(&sd->status.inventory[i], pc_get_group_level(sd)) )
 				continue;
 
+#ifdef PROJECT_BOUND // [Cydh]
+			if( sd->status.inventory[i].expire_time )
+				continue; // Cannot Sell Rental Items
+
+			// 'selling_bound' only allow sell account bound item
+			if (sd->state.selling_bound && sd->status.inventory[i].bound != 1)
+				continue;
+			if (!sd->state.selling_bound && sd->status.inventory[i].bound && !pc_can_give_bounded_items(sd))
+				continue;
+
+			val = sd->inventory_data[i]->bound_sell_price;
+#else
 			if( sd->status.inventory[i].expire_time || (sd->status.inventory[i].bound && !pc_can_give_bounded_items(sd)) )
 				continue; // Cannot Sell Rental Items or Account Bounded Items
 
 			if( sd->status.inventory[i].bound && !pc_can_give_bounded_items(sd))
 				continue; // Don't allow sale of bound items
-
+			
 			val=sd->inventory_data[i]->value_sell;
+#endif
 			if( val < 0 )
 				continue;
 			WFIFOW(fd,4+c*10)=i+2;
 			WFIFOL(fd,6+c*10)=val;
+#ifdef PROJECT_BOUND // [Cydh]
+			// Don't modifiy value if gonna sell bound item
+			if (sd->state.selling_bound)
+				WFIFOL(fd,10+c*10)=val;
+			else
+#endif
 			WFIFOL(fd,10+c*10)=pc_modifysellvalue(sd,val);
 			c++;
 		}
@@ -10862,6 +10886,9 @@ void clif_parse_NpcSellListSend(int fd,struct map_session_data *sd)
 		fail = npc_selllist(sd,n,item_list);
 
 	sd->npc_shopid = 0; //Clear shop data.
+#ifdef PROJECT_BOUND // [Cydh]
+	sd->state.selling_bound = false;
+#endif
 
 	clif_npc_sell_result(sd, fail);
 }

@@ -385,6 +385,15 @@ struct item_data {
 		unsigned short chance;
 		int id;
 	} mob[MAX_SEARCH]; //Holds the mobs that have the highest drop rate for this item. [Skotlex]
+#ifdef PROJECT_BOUND // [Cydh]
+	struct {
+		unsigned short chance;
+		unsigned short mob_id;
+	} bound_drop[MAX_SEARCH];
+	unsigned short bound_drop_maxchance;
+	unsigned short bound_buy_price;
+	unsigned short bound_sell_price;
+#endif
 	struct script_code *script;	//Default script for everything.
 	struct script_code *equip_script;	//Script executed once when equipping.
 	struct script_code *unequip_script;//Script executed once when unequipping.

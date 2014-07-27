@@ -1,0 +1,3 @@
+prontera,147,170,6	pointshop	Bound Items	730,#BOUNDZENY,2102:-1,2104:-1
+prontera,147,167,6	pointshop	Point Shop	121,#POINTSHOP,2102:1000,2104:20000
+prontera,147,164,6	shop	Shop	872,2102:-1,2104:-1

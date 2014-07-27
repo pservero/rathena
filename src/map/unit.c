@@ -2442,6 +2442,9 @@ int unit_remove_map_(struct block_list *bl, clr_type clrtype, const char* file, 
 
 			sd->npc_shopid = 0;
 			sd->adopt_invite = 0;
+#ifdef PROJECT_BOUND // [Cydh]
+			sd->state.selling_bound = false;
+#endif
 
 			if(sd->pvp_timer != INVALID_TIMER) {
 				delete_timer(sd->pvp_timer,pc_calc_pvprank_timer);

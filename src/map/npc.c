@@ -1312,6 +1312,11 @@ int npc_buysellsel(struct map_session_data* sd, int id, int type)
 	} else if (nd->subtype == POINTSHOP) {
 		char output[CHAT_SIZE_MAX];
 		memset(output,'\0',sizeof(output));
+#ifdef PROJECT_BOUND // [Cydh]
+		if (strcmp(nd->u.shop.pointshop_str,PROJECT_BOUND_ZENY) == 0)
+			sprintf(output,"Bound Zeny Shop",nd->u.shop.pointshop_str); // Bound Zeny Shop
+		else
+#endif
 		sprintf(output,msg_txt(sd,715),nd->u.shop.pointshop_str); // Point Shop List: '%s'
 		clif_broadcast(&sd->bl,output,strlen(output) + 1,BC_BLUE,SELF);
 	}
@@ -1323,6 +1328,12 @@ int npc_buysellsel(struct map_session_data* sd, int id, int type)
 	if (type==0) {
 		clif_buylist(sd,nd);
 	} else {
+#ifdef PROJECT_BOUND // [Cydh]
+		if (nd->subtype == POINTSHOP && strcmp(nd->u.shop.pointshop_str,PROJECT_BOUND_ZENY) == 0)
+			sd->state.selling_bound = true;
+		else
+			sd->state.selling_bound = false;
+#endif
 		clif_selllist(sd);
 	}
 	return 0;
@@ -1531,6 +1542,9 @@ int npc_buylist(struct map_session_data* sd, int n, unsigned short* item_list)
 	double z;
 	int i,j,k,w,skill,new_,count = 0;
 	char output[CHAT_SIZE_MAX];
+#ifdef PROJECT_BOUND // [Cydh]
+	bool bound = false;
+#endif
 
 	nullpo_retr(3, sd);
 	nullpo_retr(3, item_list);
@@ -1632,6 +1646,13 @@ int npc_buylist(struct map_session_data* sd, int n, unsigned short* item_list)
 					count = pc_readglobalreg(sd, nd->u.shop.pointshop_str);
 					break;
 			}
+#ifdef PROJECT_BOUND // [Cydh]
+			if (strcmp(nd->u.shop.pointshop_str, PROJECT_BOUND_ZENY) == 0) {
+				sprintf(output, "You don't have enough Bound Zeny");
+				clif_colormes(sd, color_table[COLOR_RED], output);
+				return 0;
+			}
+#endif
 			if (z > (double)count) {
 				sprintf(output,msg_txt(sd,713),nd->u.shop.pointshop_str); // You do not have enough '%s'.
 				clif_colormes(sd,color_table[COLOR_RED],output);
@@ -1665,6 +1686,10 @@ int npc_buylist(struct map_session_data* sd, int n, unsigned short* item_list)
 					pc_setglobalreg(sd, nd->u.shop.pointshop_str, count - (int)z);
 					break;
 			}
+#ifdef PROJECT_BOUND // [Cydh]
+			if (strcmp(nd->u.shop.pointshop_str, PROJECT_BOUND_ZENY) == 0)
+				bound = true;
+#endif
 			break;
 	}
 
@@ -1681,7 +1706,9 @@ int npc_buylist(struct map_session_data* sd, int n, unsigned short* item_list)
 			memset(&item_tmp,0,sizeof(item_tmp));
 			item_tmp.nameid = nameid;
 			item_tmp.identify = 1;
-
+#ifdef PROJECT_BOUND // [Cydh]
+			item_tmp.bound = bound;
+#endif
 			pc_additem(sd,&item_tmp,amount,LOG_TYPE_NPC);
 		}
 	}
@@ -1702,6 +1729,13 @@ int npc_buylist(struct map_session_data* sd, int n, unsigned short* item_list)
 	}
 
 	if (nd->subtype == POINTSHOP) {
+#ifdef PROJECT_BOUND // [Cydh]
+		if (strcmp(nd->u.shop.pointshop_str, PROJECT_BOUND_ZENY) == 0) {
+			sprintf(output, "You spent %d Bound Zeny. Your Bound Zeny now: %d", z, pc_readaccountreg(sd, PROJECT_BOUND_ZENY));
+			clif_colormes(sd, color_table[COLOR_WHITE], output);
+			return 0;
+		}
+#endif
 		sprintf(output,msg_txt(sd,716),nd->u.shop.pointshop_str,count - (int)z); // Your '%s' now: %d
 		clif_disp_onlyself(sd,output,strlen(output)+1);
 	}
@@ -1815,6 +1849,14 @@ int npc_selllist(struct map_session_data* sd, int n, unsigned short* item_list)
 			continue;
 		}
 
+#ifdef PROJECT_BOUND // [Cydh]
+		if (!sd->state.selling_bound && sd->status.inventory[idx].bound != 1)
+			return 1;
+		if (sd->state.selling_bound) {
+			value = sd->inventory_data[idx]->bound_sell_price;
+		}
+		else
+#endif
 		value = pc_modifysellvalue(sd, sd->inventory_data[idx]->value_sell);
 
 		z+= (double)value*amount;
@@ -1846,8 +1888,20 @@ int npc_selllist(struct map_session_data* sd, int n, unsigned short* item_list)
 
 	if( z > MAX_ZENY )
 		z = MAX_ZENY;
-
+	
+#ifdef PROJECT_BOUND // [Cydh]
+	if (sd->state.selling_bound) {
+		char output[CHAT_SIZE_MAX];
+		pc_setaccountreg(sd, PROJECT_BOUND_ZENY, pc_readaccountreg(sd, PROJECT_BOUND_ZENY)+(int)z);
+		sprintf(output, "You gained %d Bound Zeny. Total Bound Zeny is %d.", (int)z, pc_readaccountreg(sd,PROJECT_BOUND_ZENY));
+		clif_colormes(sd, color_table[COLOR_WHITE], output);
+	}
+	else
+		pc_getzeny(sd, (int)z, LOG_TYPE_NPC, NULL);
+	sd->state.selling_bound = false; // Remove 'selling_bound' here
+#else
 	pc_getzeny(sd, (int)z, LOG_TYPE_NPC, NULL);
+#endif
 
 	// custom merchant shop exp bonus
 	if( battle_config.shop_exp > 0 && z > 0 && ( skill = pc_checkskill(sd,MC_OVERCHARGE) ) > 0)
@@ -2476,6 +2530,10 @@ static const char* npc_parse_shop(char* w1, char* w2, char* w3, char* w4, const 
 		}
 		if( value < 0 ) {
 			if( type == SHOP ) value = id->value_buy;
+#ifdef PROJECT_BOUND // [Cydh]
+			else if (type == POINTSHOP && strcmp(point_str, PROJECT_BOUND_ZENY) == 0 && value < 0)
+				value = id->bound_buy_price;
+#endif
 			else value = 0; // Cashshop doesn't have a "buy price" in the item_db
 		}
 		if( (type == SHOP || type == ITEMSHOP || type == POINTSHOP) && value == 0 ) { // NPC selling items for free!

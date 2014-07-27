@@ -95,6 +95,14 @@ struct spawn_info {
 	unsigned short qty;
 };
 
+#ifdef PROJECT_BOUND // [Cydh]
+struct s_bound_drop_entry {
+	unsigned short nameid;
+	unsigned short rate;
+};
+struct eri *mob_bound_drop_ers; /// Player's Item Group Heal Rate table
+#endif
+
 struct mob_db {
 	char sprite[NAME_LENGTH],name[NAME_LENGTH],jname[NAME_LENGTH];
 	unsigned int base_exp,job_exp;
@@ -105,6 +113,9 @@ struct mob_db {
 	struct {
 		unsigned short nameid;
 		int p;
+#ifdef PROJECT_BOUND // [Cydh]
+		bool isbound;
+#endif
 	} dropitem[MAX_MOB_DROP];
 	struct {
 		unsigned short nameid;
@@ -117,6 +128,11 @@ struct mob_db {
 	int maxskill;
 	struct mob_skill skill[MAX_MOBSKILL];
 	struct spawn_info spawn[10];
+
+#ifdef PROJECT_BOUND // [Cydh]
+	struct s_bound_drop_entry **bound_droplist;
+	unsigned char bound_dropcount;
+#endif
 };
 
 struct mob_data {

@@ -88,6 +88,20 @@
 	#define MAX_CHAR_VIP 0
 #endif
 
+/// Custom Bound System [Cydh]
+/// Visit http://pservero.com/ for more info
+/// - Allow to makes monster drops as Account Bound Items
+/// - Allow to add monster drops for Account Bound Items
+/// - Allow to sell Account Bound Items to Point Shop NPC with variable same with PROJECT_BOUND_ZENY
+/// - Currency gained by selling Account Bount Items stored as PROJECT_BOUND_ZENY
+/// - Dropped Account Bound Items from monster will be auto-looted
+/// - Item price (buy/sell) from Account Bound Item can be adjusted, or use same as normal price by default
+/// Comment this define below to disable this system
+#define PROJECT_BOUND
+#ifdef PROJECT_BOUND
+#define PROJECT_BOUND_ZENY "#BOUNDZENY"
+#endif
+
 /**
  * No settings past this point
  **/
