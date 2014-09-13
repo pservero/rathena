@@ -1258,6 +1258,10 @@ ACMD_FUNC(item)
 
 	for(j--; j>=0; j--){ //produce items in list
 		unsigned short item_id = item_data[j]->nameid;
+		
+		if (itemdb_isRestrictedOf(item_id, sd, 1))
+			return -1;
+
 		//Check if it's stackable.
 		if (!itemdb_isstackable2(item_data[j]))
 			get_count = 1;
@@ -1327,6 +1331,9 @@ ACMD_FUNC(item2)
 	if ((item_data = itemdb_searchname(item_name)) != NULL ||
 	    (item_data = itemdb_exists(atoi(item_name))) != NULL)
 		item_id = item_data->nameid;
+
+	if (itemdb_isRestrictedOf(item_id, sd, 1) || itemdb_isRestrictedOf(item_id, sd, 2))
+		return -1;
 
 	if (item_id > 500) {
 		int loop, get_count, i;
@@ -2214,6 +2221,9 @@ ACMD_FUNC(refine)
 		if(position && !(sd->status.inventory[i].equip & position))
 			continue;
 
+		if (itemdb_isRestrictedOf(sd->status.inventory[i].nameid, sd, 2))
+			continue;
+
 		final_refine = cap_value(sd->status.inventory[i].refine + refine, 0, MAX_REFINE);
 		if (sd->status.inventory[i].refine != final_refine) {
 			sd->status.inventory[i].refine = final_refine;
@@ -2270,6 +2280,9 @@ ACMD_FUNC(produce)
 	}
 
 	item_id = item_data->nameid;
+
+	if (itemdb_isRestrictedOf(item_id, sd, 3))
+		return -1;
 
 	if (itemdb_isequip2(item_data)) {
 		char flag = 0;

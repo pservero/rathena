@@ -1474,6 +1474,55 @@ bool itemdb_is_spellbook2(unsigned short nameid) {
 }
 
 /**
+* Check restriction for item
+* @param nameid Item ID
+* @param sd Player
+* @param type 1 - @item/@item2/@itembound/@itembound2; 2 - @refine/refine of @item2; 3 - @produce
+* @return False if no restriction, True if restricted
+* @author [Cydh]
+*/
+bool itemdb_isRestrictedOf(int nameid, struct map_session_data *sd, int8 type) {
+	struct item_data *id = itemdb_exists(nameid);
+	char msg[CHAT_SIZE_MAX];
+
+	if (!id || !sd)
+		return false;
+
+	if ((type == 1 && sd->group_id < id->flag.minGroupID_item)
+		|| (type == 3 && sd->group_id < id->flag.minGroupID_produce)
+		)
+	{
+		sprintf(msg, "Item '%s' (%d) cannot be created!", id->jname, id->nameid);
+		clif_colormes(sd, color_table[COLOR_RED], msg);
+		return true;
+	}
+	if (type == 2 && sd->group_id < id->flag.minGroupID_refine) {
+		sprintf(msg, "Item '%s' (%d) cannot be refined!", id->jname, id->nameid);
+		clif_colormes(sd, color_table[COLOR_RED], msg);
+		return true;
+	}
+	return false;
+}
+
+/**
+* Read item_restriction.txt
+* @author [Cydh]
+*/
+static bool itemdb_read_restriction(char *str[], int column, int current) {
+	uint16 nameid = atoi(str[0]);
+	struct item_data *id = itemdb_exists(nameid);
+	if (!id) {
+		ShowError("itemdb_read_restriction: Invalid item '%s'\n", str[0]);
+		return false;
+	}
+	id->flag.minGroupID_item = atoi(str[1]);
+	id->flag.minGroupID_refine = atoi(str[2]);
+	id->flag.minGroupID_produce = atoi(str[3]);
+	// Add yourself the flag
+	return true;
+}
+
+/**
 * Read all item-related databases
 */
 static void itemdb_read(void) {
@@ -1507,6 +1556,7 @@ static void itemdb_read(void) {
 		sv_readdb(dbsubpath1, "item_avail.txt",         ',', 2, 2, -1, &itemdb_read_itemavail, i);
 		sv_readdb(dbsubpath1, "item_stack.txt",         ',', 3, 3, -1, &itemdb_read_stack, i);
 		sv_readdb(dbsubpath1, "item_nouse.txt",         ',', 3, 3, -1, &itemdb_read_nouse, i);
+		sv_readdb(dbsubpath1, "item_restriction.txt",   ',', 4, 4, -1, &itemdb_read_restriction, i);
 		
 		itemdb_read_itemgroup(dbsubpath2, i);
 		itemdb_read_combos(dbsubpath2,i); //TODO change this to sv_read ? id#script ?

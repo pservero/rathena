@@ -389,6 +389,10 @@ struct item_data {
 	struct script_code *equip_script;	//Script executed once when equipping.
 	struct script_code *unequip_script;//Script executed once when unequipping.
 	struct {
+		// Item command restriction [Cydh]
+		unsigned char minGroupID_item,
+			minGroupID_refine,
+			minGroupID_produce;
 		unsigned available : 1;
 		uint32 no_equip;
 		unsigned no_refine : 1;	// [celest]
@@ -488,6 +492,8 @@ struct item_combo *itemdb_combo_exists(unsigned short combo_id);
 struct s_item_group_db *itemdb_group_exists(unsigned short group_id);
 char itemdb_pc_get_itemgroup(uint16 group_id, struct map_session_data *sd);
 uint16 itemdb_get_randgroupitem_count(uint16 group_id, uint8 sub_group, unsigned short nameid);
+
+bool itemdb_isRestrictedOf(int nameid, struct map_session_data *sd, int8 type);
 
 void itemdb_reload(void);
 
