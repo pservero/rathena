@@ -1781,6 +1781,8 @@ void clif_buylist(struct map_session_data *sd, struct npc_data *nd)
 
 	c = 0;
 	discount = npc_shop_discount(nd->subtype,nd->u.shop.discount);
+	if (nd->u.shop.flag&1 && nd->subtype == NPCTYPE_SHOP) // Don't display Discount value [Cydh]
+		discount = false;
 	for( i = 0; i < nd->u.shop.count; i++ )
 	{
 		struct item_data* id = itemdb_exists(nd->u.shop.shop_item[i].nameid);
@@ -1801,15 +1803,21 @@ void clif_buylist(struct map_session_data *sd, struct npc_data *nd)
 
 /// Presents list of items, that can be sold to an NPC shop (ZC_PC_SELL_ITEMLIST).
 /// 00c7 <packet len>.W { <index>.W <price>.L <overcharge price>.L }*
-void clif_selllist(struct map_session_data *sd)
+void clif_selllist(struct map_session_data *sd, struct npc_data *nd)
 {
 	int fd,i,c=0,val;
+	bool overcharge = true;
 
 	nullpo_retv(sd);
+	nullpo_retv(nd);
 
 	fd=sd->fd;
 	WFIFOHEAD(fd, MAX_INVENTORY * 10 + 4);
 	WFIFOW(fd,0)=0xc7;
+
+	if (nd->u.shop.flag&2 && nd->subtype == NPCTYPE_SHOP) // Don't display Overcharged value [Cydh]
+		overcharge = false;
+
 	for( i = 0; i < MAX_INVENTORY; i++ )
 	{
 		if( sd->status.inventory[i].nameid > 0 && sd->inventory_data[i] )
@@ -1828,7 +1836,7 @@ void clif_selllist(struct map_session_data *sd)
 				continue;
 			WFIFOW(fd,4+c*10)=i+2;
 			WFIFOL(fd,6+c*10)=val;
-			WFIFOL(fd,10+c*10)=pc_modifysellvalue(sd,val);
+			WFIFOL(fd,10+c*10)=(overcharge)?pc_modifysellvalue(sd,val):val;
 			c++;
 		}
 	}

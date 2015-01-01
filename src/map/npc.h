@@ -62,6 +62,7 @@ struct npc_data {
 			unsigned short itemshop_nameid; // Item Shop cost item ID
 			char pointshop_str[32]; // Point Shop cost variable name
 			bool discount;
+			unsigned char flag; /// &1 No Discount, &2 No Overcharge (for SHOP only) [Cydh]
 		} shop;
 		struct {
 			short xs,ys; // OnTouch area radius

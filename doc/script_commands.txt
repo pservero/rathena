@@ -270,8 +270,8 @@ these floating NPC objects are for. More on that below.
 
 ** Define a shop/cashshop/itemshop/pointshop NPC.
 
--%TAB%shop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
-<map name>,<x>,<y>,<facing>%TAB%shop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
+-%TAB%shop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}{,<flag>}
+<map name>,<x>,<y>,<facing>%TAB%shop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}{,<flag>}
 
 -%TAB%cashshop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
 <map name>,<x>,<y>,<facing>%TAB%cashshop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
@@ -307,6 +307,11 @@ are permanent character variables, temporary character variables, permanent
 local account variables, or permanent global account variables. These variables
 must be of integer type, not string. 'discount' flag is an option, makes the price
 at that shop is affected by discount skill.
+
+'flag' for shop NPC means (bitmask):
+	1 = Disable Discount
+	2 = Disable Overcharge
+By default (if flag is undefined), the value always be 0.
 
 ** Define an warp/shop/cashshop/itemshop/pointshop/NPC duplicate.
 

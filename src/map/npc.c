@@ -1321,7 +1321,7 @@ int npc_buysellsel(struct map_session_data* sd, int id, int type)
 	if (type==0) {
 		clif_buylist(sd,nd);
 	} else {
-		clif_selllist(sd);
+		clif_selllist(sd,nd);
 	}
 	return 0;
 }
@@ -1589,7 +1589,8 @@ int npc_buylist(struct map_session_data* sd, int n, unsigned short* item_list)
 				return 2;
 		}
 
-		if (npc_shop_discount(nd->subtype,nd->u.shop.discount))
+		// No Discount [Cydh]
+		if ((!(nd->u.shop.flag&1) && nd->subtype == NPCTYPE_SHOP) || (nd->subtype != NPCTYPE_SHOP && npc_shop_discount(nd->subtype,nd->u.shop.discount)))
 			value = pc_modifybuyvalue(sd,value);
 
 		z += (double)value * amount;
@@ -1813,7 +1814,11 @@ int npc_selllist(struct map_session_data* sd, int n, unsigned short* item_list)
 			continue;
 		}
 
-		value = pc_modifysellvalue(sd, sd->inventory_data[idx]->value_sell);
+		// No Overcharge [Cydh]
+		if ((!(nd->u.shop.flag&2) && nd->subtype == NPCTYPE_SHOP) || nd->subtype != NPCTYPE_SHOP)
+			value = pc_modifysellvalue(sd, sd->inventory_data[idx]->value_sell);
+		else
+			value = sd->inventory_data[idx]->value_sell;
 
 		z+= (double)value*amount;
 	}
@@ -2369,8 +2374,8 @@ static const char* npc_parse_warp(char* w1, char* w2, char* w3, char* w4, const 
 /**
  * Parses a shop/cashshop npc.
  * Line definition :
- * <map name>,<x>,<y>,<facing>%TAB%shop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
- * <map name>,<x>,<y>,<facing>%TAB%cashshop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}
+ * <map name>,<x>,<y>,<facing>%TAB%shop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}{,<flag>}
+ * <map name>,<x>,<y>,<facing>%TAB%cashshop%TAB%<NPC Name>%TAB%<sprite id>,<itemid>:<price>{,<itemid>:<price>...}{,<flag>}
  * <map name>,<x>,<y>,<facing>%TAB%itemshop%TAB%<NPC Name>%TAB%<sprite id>,<costitemid>{:<discount>},<itemid>:<price>{,<itemid>:<price>...}
  * <map name>,<x>,<y>,<facing>%TAB%pointshop%TAB%<NPC Name>%TAB%<sprite id>,<costvariable>{:<discount>},<itemid>:<price>{,<itemid>:<price>...}
  * @param w1 : word 1 before tab (<from map name>,<x>,<y>,<facing>)
@@ -2472,10 +2477,18 @@ static const char* npc_parse_shop(char* w1, char* w2, char* w3, char* w4, const 
 		if( p == NULL )
 			break;
 		if( sscanf(p, ",%hu:%d", &nameid2, &value) != 2 ) {
-			ShowError("npc_parse_shop: Invalid item definition in file '%s', line '%d'. Ignoring the rest of the line...\n * w1=%s\n * w2=%s\n * w3=%s\n * w4=%s\n", filepath, strline(buffer,start-buffer), w1, w2, w3, w4);
-			break;
+			// Set shop flag [Cydh]
+			if (nameid2 != 0) {
+				ShowInfo("Shop at '"CL_WHITE"%s#L%d"CL_RESET"' Discount: "CL_WHITE"%s"CL_RESET", Overcharge: "CL_WHITE"%s"CL_RESET".\n",
+					filepath, strline(buffer,start-buffer), nameid2&1 ? "NO" : "YES", nameid2&2 ? "NO" : "YES");
+				nd->u.shop.flag = (unsigned char)nameid2;
+			}
+			if (!nd->u.shop.flag) {
+				ShowError("npc_parse_shop: Invalid item definition in file '%s', line '%d'. Ignoring the rest of the line...\n * w1=%s\n * w2=%s\n * w3=%s\n * w4=%s\n", filepath, strline(buffer,start-buffer), w1, w2, w3, w4);
+				break;
+			}
 		}
-		if( (id = itemdb_exists(nameid2)) == NULL ) {
+		if( !nd->u.shop.flag && (id = itemdb_exists(nameid2)) == NULL ) {
 			ShowWarning("npc_parse_shop: Invalid sell item in file '%s', line '%d' (id '%hu').\n", filepath, strline(buffer,start-buffer), nameid2);
 			p = strchr(p+1,',');
 			continue;
