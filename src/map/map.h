@@ -114,16 +114,18 @@ enum MOBID {
 //These marks the "level" of the job.
 #define JOBL_2_1 0x100 //256
 #define JOBL_2_2 0x200 //512
-#define JOBL_2 0x300
+#define JOBL_2 0x300 //768
 
 #define JOBL_UPPER 0x1000 //4096
 #define JOBL_BABY 0x2000  //8192
 #define JOBL_THIRD 0x4000 //16384
+#define JOBL_SUPER_NOVICE 0x8000 //32768
 
 //for filtering and quick checking.
 #define MAPID_BASEMASK 0x00ff
 #define MAPID_UPPERMASK 0x0fff
 #define MAPID_THIRDMASK (JOBL_THIRD|MAPID_UPPERMASK)
+
 //First Jobs
 //Note the oddity of the novice:
 //Super Novices are considered the 2-1 version of the novice! Novices are considered a first class type, too...
@@ -146,8 +148,7 @@ enum e_mapid {
 	MAPID_GANGSI,
 	MAPID_OKTOBERFEST,
 //2-1 Jobs
-	MAPID_SUPER_NOVICE = JOBL_2_1|0x0,
-	MAPID_KNIGHT,
+	MAPID_KNIGHT = JOBL_2_1|0x1,
 	MAPID_WIZARD,
 	MAPID_HUNTER,
 	MAPID_PRIEST,
@@ -197,8 +198,7 @@ enum e_mapid {
 	MAPID_BABY_MERCHANT,
 	MAPID_BABY_THIEF,
 //Baby 2-1 Jobs
-	MAPID_SUPER_BABY = JOBL_BABY|JOBL_2_1|0x0,
-	MAPID_BABY_KNIGHT,
+	MAPID_BABY_KNIGHT = JOBL_BABY|JOBL_2_1|0x1,
 	MAPID_BABY_WIZARD,
 	MAPID_BABY_HUNTER,
 	MAPID_BABY_PRIEST,
@@ -212,8 +212,7 @@ enum e_mapid {
 	MAPID_BABY_ALCHEMIST,
 	MAPID_BABY_ROGUE,
 //3-1 Jobs
-	MAPID_SUPER_NOVICE_E = JOBL_THIRD|JOBL_2_1|0x0,
-	MAPID_RUNE_KNIGHT,
+	MAPID_RUNE_KNIGHT = JOBL_THIRD|JOBL_2_1|0x1,
 	MAPID_WARLOCK,
 	MAPID_RANGER,
 	MAPID_ARCH_BISHOP,
@@ -241,8 +240,7 @@ enum e_mapid {
 	MAPID_GENETIC_T,
 	MAPID_SHADOW_CHASER_T,
 //Baby 3-1 Jobs
-	MAPID_SUPER_BABY_E = JOBL_THIRD|JOBL_BABY|JOBL_2_1|0x0,
-	MAPID_BABY_RUNE,
+	MAPID_BABY_RUNE = JOBL_THIRD|JOBL_BABY|JOBL_2_1|0x1,
 	MAPID_BABY_WARLOCK,
 	MAPID_BABY_RANGER,
 	MAPID_BABY_BISHOP,
@@ -255,6 +253,11 @@ enum e_mapid {
 	MAPID_BABY_SURA,
 	MAPID_BABY_GENETIC,
 	MAPID_BABY_CHASER,
+//Super Novices
+	MAPID_SUPER_NOVICE = JOBL_SUPER_NOVICE|JOBL_2_1|0x0,
+	MAPID_SUPER_BABY = JOBL_SUPER_NOVICE|JOBL_BABY|JOBL_2_1|0x0,
+	MAPID_SUPER_NOVICE_E = JOBL_SUPER_NOVICE|JOBL_THIRD|JOBL_2_1|0x0,
+	MAPID_SUPER_BABY_E = JOBL_SUPER_NOVICE|JOBL_THIRD|JOBL_BABY|JOBL_2_1|0x0,
 };
 
 //Max size for inputs to Graffiti, Talkie Box and Vending text prompts
@@ -298,10 +301,19 @@ enum bl_type {
 	BL_ALL   = 0xFFF,
 };
 
-//For common mapforeach calls. Since pets cannot be affected, they aren't included here yet.
+/// For common mapforeach calls. Since pets cannot be affected, they aren't included here yet.
 #define BL_CHAR (BL_PC|BL_MOB|BL_HOM|BL_MER|BL_ELEM)
 
-enum npc_subtype { WARP, SHOP, SCRIPT, CASHSHOP, ITEMSHOP, POINTSHOP, TOMB };
+/// NPC Subtype
+enum npc_subtype {
+	NPCTYPE_WARP, /// Warp
+	NPCTYPE_SHOP, /// Shop
+	NPCTYPE_SCRIPT, /// Script
+	NPCTYPE_CASHSHOP, /// Cashshop
+	NPCTYPE_ITEMSHOP, /// Itemshop
+	NPCTYPE_POINTSHOP, /// Pointshop
+	NPCTYPE_TOMB /// Monster tomb
+};
 
 enum e_race {
 	RC_NONE_ = -1, //don't give us bonus
@@ -413,7 +425,7 @@ struct flooritem_data {
 	int cleartimer;
 	int first_get_charid,second_get_charid,third_get_charid;
 	unsigned int first_get_tick,second_get_tick,third_get_tick;
-	struct item item_data;
+	struct item item;
 };
 
 enum _sp {
@@ -433,6 +445,8 @@ enum _sp {
 	SP_KILLEDRID=122,
 	SP_SITTING=123,
 	SP_CHARMOVE=124,
+	SP_CHARRENAME=125,
+	SP_CHARFONT=126,
 
 	// Mercenaries
 	SP_MERCFLEE=165, SP_MERCKILLS=189, SP_MERCFAITH=190,
@@ -778,7 +792,7 @@ extern int map_num;
 
 extern int autosave_interval;
 extern int minsave_interval;
-extern int save_settings;
+extern unsigned char save_settings;
 extern int agit_flag;
 extern int agit2_flag;
 extern int night_flag; // 0=day, 1=night [Yor]
@@ -790,6 +804,20 @@ extern char help2_txt[];
 extern char charhelp_txt[];
 
 extern char wisp_server_name[];
+
+/// Type of 'save_settings'
+enum save_settings_type {
+	CHARSAVE_NONE = 0,
+	CHARSAVE_TRADE   = 0x01, /// After trading
+	CHARSAVE_VENDING = 0x02, /// After vending (open/transaction)
+	CHARSAVE_STORAGE = 0x04, /// After closing storage/guild storage.
+	CHARSAVE_PET     = 0x08, /// After hatching/returning to egg a pet.
+	CHARSAVE_MAIL    = 0x10, /// After successfully sending a mail with attachment
+	CHARSAVE_AUCTION = 0x20, /// After successfully submitting an item for auction
+	CHARSAVE_QUEST   = 0x40, /// After successfully get/delete/complete a quest
+	CHARSAVE_BANK    = 0x80, /// After every bank transaction (deposit/withdraw)
+	CHARSAVE_ALL     = 0xFF,
+};
 
 // users
 void map_setusers(int);
@@ -814,11 +842,12 @@ int map_foreachincell(int (*func)(struct block_list*,va_list), int16 m, int16 x,
 int map_foreachinpath(int (*func)(struct block_list*,va_list), int16 m, int16 x0, int16 y0, int16 x1, int16 y1, int16 range, int length, int type, ...);
 int map_foreachinmap(int (*func)(struct block_list*,va_list), int16 m, int type, ...);
 //blocklist nb in one cell
-int map_count_oncell(int16 m,int16 x,int16 y,int type);
+int map_count_oncell(int16 m,int16 x,int16 y,int type,int flag);
 struct skill_unit *map_find_skill_unit_oncell(struct block_list *,int16 x,int16 y,uint16 skill_id,struct skill_unit *, int flag);
 // search and creation
 int map_get_new_object_id(void);
 int map_search_freecell(struct block_list *src, int16 m, int16 *x, int16 *y, int16 rx, int16 ry, int flag);
+bool map_closest_freecell(int16 m, int16 *x, int16 *y, int type, int flag);
 //
 int map_quit(struct map_session_data *);
 // npc
@@ -828,7 +857,7 @@ bool map_addnpc(int16 m,struct npc_data *);
 int map_clearflooritem_timer(int tid, unsigned int tick, int id, intptr_t data);
 int map_removemobs_timer(int tid, unsigned int tick, int id, intptr_t data);
 void map_clearflooritem(struct block_list* bl);
-int map_addflooritem(struct item *item_data,int amount,int16 m,int16 x,int16 y,int first_charid,int second_charid,int third_charid,int flags);
+int map_addflooritem(struct item *item,int amount,int16 m,int16 x,int16 y,int first_charid,int second_charid,int third_charid,int flags);
 
 // instances
 int map_addinstancemap(const char*,int);
@@ -896,7 +925,8 @@ bool                    mapit_exists(struct s_mapiterator* mapit);
 #define mapit_geteachiddb() mapit_alloc(MAPIT_NORMAL,BL_ALL)
 
 int map_check_dir(int s_dir,int t_dir);
-uint8 map_calc_dir( struct block_list *src,int16 x,int16 y);
+uint8 map_calc_dir(struct block_list *src,int16 x,int16 y);
+uint8 map_calc_dir_xy(int16 srcx, int16 srcy, int16 x, int16 y, uint8 srcdir);
 int map_random_dir(struct block_list *bl, short *x, short *y); // [Skotlex]
 
 int cleanup_sub(struct block_list *bl, va_list ap);
@@ -981,7 +1011,7 @@ extern int db_use_sqldbs;
 extern Sql* mmysql_handle;
 extern Sql* logmysql_handle;
 
-extern char buyingstore_db[32];
+extern char buyingstores_db[32];
 extern char buyingstore_items_db[32];
 extern char item_db_db[32];
 extern char item_db2_db[32];

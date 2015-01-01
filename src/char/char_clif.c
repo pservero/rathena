@@ -17,9 +17,7 @@
 #include "char_mapif.h"
 #include "char_clif.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 //------------------------------------------------
@@ -168,26 +166,27 @@ int chclif_parse_pincode_change( int fd, struct char_session_data* sd ){
 		return 0;
 	if( charserv_config.pincode_config.pincode_enabled==0 || RFIFOL(fd,2) != sd->account_id )
 		return 1;
-        else {
-            char oldpin[PINCODE_LENGTH+1];
-            char newpin[PINCODE_LENGTH+1];
-        
-            memset(oldpin,0,PINCODE_LENGTH+1);
-            memset(newpin,0,PINCODE_LENGTH+1);
-            strncpy(oldpin, (char*)RFIFOP(fd,6), PINCODE_LENGTH);
-            strncpy(newpin, (char*)RFIFOP(fd,10), PINCODE_LENGTH);
-            RFIFOSKIP(fd,14);
-
-            char_pincode_decrypt(sd->pincode_seed,oldpin);
-            if( !char_pincode_compare( fd, sd, oldpin ) )
-                    return 1;
-            char_pincode_decrypt(sd->pincode_seed,newpin);
-
-            chlogif_pincode_notifyLoginPinUpdate( sd->account_id, newpin );
-            strncpy(sd->pincode, newpin, sizeof(newpin));
-
-            chclif_pincode_sendstate( fd, sd, PINCODE_PASSED );
-        }
+	else {
+		char oldpin[PINCODE_LENGTH+1];
+		char newpin[PINCODE_LENGTH+1];
+		
+		memset(oldpin,0,PINCODE_LENGTH+1);
+		memset(newpin,0,PINCODE_LENGTH+1);
+		strncpy(oldpin, (char*)RFIFOP(fd,6), PINCODE_LENGTH);
+		strncpy(newpin, (char*)RFIFOP(fd,10), PINCODE_LENGTH);
+		RFIFOSKIP(fd,14);
+		
+		char_pincode_decrypt(sd->pincode_seed,oldpin);
+		if( !char_pincode_compare( fd, sd, oldpin ) )
+			return 1;
+		char_pincode_decrypt(sd->pincode_seed,newpin);
+		
+		chlogif_pincode_notifyLoginPinUpdate( sd->account_id, newpin );
+		strncpy(sd->pincode, newpin, sizeof(newpin));
+		ShowInfo("Pincode changed for AID: %d\n", sd->account_id);
+		
+		chclif_pincode_sendstate( fd, sd, PINCODE_PASSED );
+	}
 	return 1;
 }
 
@@ -200,19 +199,19 @@ int chclif_parse_pincode_setnew( int fd, struct char_session_data* sd ){
 
 	if( charserv_config.pincode_config.pincode_enabled==0 || RFIFOL(fd,2) != sd->account_id )
 		return 1;
-        else {
-            char newpin[PINCODE_LENGTH+1];
-            memset(newpin,0,PINCODE_LENGTH+1);
-            strncpy( newpin, (char*)RFIFOP(fd,6), PINCODE_LENGTH );
-            RFIFOSKIP(fd,10);
+	else {
+		char newpin[PINCODE_LENGTH+1];
+		memset(newpin,0,PINCODE_LENGTH+1);
+		strncpy( newpin, (char*)RFIFOP(fd,6), PINCODE_LENGTH );
+		RFIFOSKIP(fd,10);
 
-            char_pincode_decrypt( sd->pincode_seed, newpin );
+		char_pincode_decrypt( sd->pincode_seed, newpin );
 
-            chlogif_pincode_notifyLoginPinUpdate( sd->account_id, newpin );
-            strncpy( sd->pincode, newpin, strlen( newpin ) );
+		chlogif_pincode_notifyLoginPinUpdate( sd->account_id, newpin );
+		strncpy( sd->pincode, newpin, strlen( newpin ) );
 
-            chclif_pincode_sendstate( fd, sd, PINCODE_PASSED );
-        }
+		chclif_pincode_sendstate( fd, sd, PINCODE_PASSED );
+	}
 	return 1;
 }
 
@@ -318,7 +317,7 @@ void chclif_send_auth_result(int fd,char result){
 /// 5 (0x71b): To delete a character you must withdraw from the party.
 /// Any (0x718): An unknown error has occurred.
 /// HC: <0828>.W <char id>.L <Msg:0-5>.L <deleteDate>.L
-void chclif_char_delete2_ack(int fd, int char_id, uint32 result, time_t delete_date) {
+void chclif_char_delete2_ack(int fd, uint32 char_id, uint32 result, time_t delete_date) {
 	WFIFOHEAD(fd,14);
 	WFIFOW(fd,0) = 0x828;
 	WFIFOL(fd,2) = char_id;
@@ -336,7 +335,7 @@ void chclif_char_delete2_ack(int fd, int char_id, uint32 result, time_t delete_d
 /// 5 (0x71e): Date of birth do not match.
 /// Any (0x718): An unknown error has occurred.
 /// HC: <082a>.W <char id>.L <Msg:0-5>.L
-void chclif_char_delete2_accept_ack(int fd, int char_id, uint32 result) {
+void chclif_char_delete2_accept_ack(int fd, uint32 char_id, uint32 result) {
 	if(result == 1 ){
 		struct char_session_data* sd;
 		sd = (struct char_session_data*)session[fd]->session_data;
@@ -358,7 +357,7 @@ void chclif_char_delete2_accept_ack(int fd, int char_id, uint32 result) {
 /// 2 (0x719): A database error occurred.
 /// Any (0x718): An unknown error has occurred.
 /// HC: <082c>.W <char id>.L <Msg:1-2>.L
-void chclif_char_delete2_cancel_ack(int fd, int char_id, uint32 result) {
+void chclif_char_delete2_cancel_ack(int fd, uint32 char_id, uint32 result) {
 	WFIFOHEAD(fd,10);
 	WFIFOW(fd,0) = 0x82c;
 	WFIFOL(fd,2) = char_id;
@@ -370,7 +369,7 @@ void chclif_char_delete2_cancel_ack(int fd, int char_id, uint32 result) {
 int chclif_parse_char_delete2_req(int fd, struct char_session_data* sd) {
     FIFOSD_CHECK(6)
     {
-        int char_id, i;
+        uint32 char_id, i;
 		char* data;
 		time_t delete_date;
 
@@ -425,16 +424,17 @@ int chclif_parse_char_delete2_req(int fd, struct char_session_data* sd) {
 		}
 
 		chclif_char_delete2_ack(fd, char_id, 1, delete_date);
-    }
-    return 1;
+	}
+	return 1;
 }
 
 // CH: <0829>.W <char id>.L <birth date:YYMMDD>.6B
 int chclif_parse_char_delete2_accept(int fd, struct char_session_data* sd) {
-    FIFOSD_CHECK(12)
-    {
-        char birthdate[8+1];
-		int char_id, i, k;
+	FIFOSD_CHECK(12)
+	{
+		char birthdate[8+1];
+		uint32 char_id;
+		int i, k;
 		unsigned int base_level;
 		char* data;
 		time_t delete_date;
@@ -503,13 +503,14 @@ int chclif_parse_char_delete2_accept(int fd, struct char_session_data* sd) {
 		sd->found_char[MAX_CHARS-1] = -1;
 
 		chclif_char_delete2_accept_ack(fd, char_id, 1);
-    }
-    return 1;
+	}
+	return 1;
 }
 
 // CH: <082b>.W <char id>.L
 int chclif_parse_char_delete2_cancel(int fd, struct char_session_data* sd) {
-	int char_id, i;
+	uint32 char_id;
+	int i;
 
 	FIFOSD_CHECK(6)
 
@@ -589,7 +590,7 @@ int chclif_parse_reqtoconnect(int fd, struct char_session_data* sd,uint32 ipl){
 		struct auth_node* node;
 		DBMap *auth_db = char_get_authdb();
 
-		int account_id = RFIFOL(fd,2);
+		uint32 account_id = RFIFOL(fd,2);
 		uint32 login_id1 = RFIFOL(fd,6);
 		uint32 login_id2 = RFIFOL(fd,10);
 		int sex = RFIFOB(fd,16);
@@ -677,7 +678,7 @@ int chclif_parse_charselect(int fd, struct char_session_data* sd,uint32 ipl){
 		struct mmo_charstatus char_dat;
 		struct mmo_charstatus *cd;
 		char* data;
-		int char_id;
+		uint32 char_id;
 		uint32 subnet_map_ip;
 		struct auth_node* node;
 		int i, map_fd;
@@ -711,7 +712,7 @@ int chclif_parse_charselect(int fd, struct char_session_data* sd,uint32 ipl){
 			WFIFOSET(fd,3);
 			return 1;
 		}
-                
+
 		/* set char as online prior to loading its data so 3rd party applications will realise the sql data is not reliable */
 		char_set_char_online(-2,char_id,sd->account_id);
 		if( !char_mmo_char_fromsql(char_id, &char_dat, true) ) { /* failed? set it back offline */

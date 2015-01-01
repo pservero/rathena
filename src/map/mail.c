@@ -10,11 +10,7 @@
 #include "itemdb.h"
 #include "clif.h"
 #include "pc.h"
-#include "log.h"
 #include "intif.h"
-
-#include <time.h>
-#include <string.h>
 
 void mail_clear(struct map_session_data *sd)
 {
@@ -52,6 +48,8 @@ int mail_removezeny(struct map_session_data *sd, short flag)
 	{  //Zeny send
 		pc_payzeny(sd,sd->mail.zeny,LOG_TYPE_MAIL, NULL);
 	}
+	if (sd->mail.zeny > 0)
+		clif_updatestatus(sd, SP_ZENY);
 	sd->mail.zeny = 0;
 
 	return 1;
@@ -64,13 +62,13 @@ int mail_removezeny(struct map_session_data *sd, short flag)
 * @param amount
 * @return True if item/zeny can be set, False if failed
 */
-bool mail_setitem(struct map_session_data *sd, short idx, unsigned short amount) {
+bool mail_setitem(struct map_session_data *sd, short idx, int amount) {
 
 	if( pc_istrading(sd) )
 		return false;
 
 	if( idx == 0 ) { // Zeny Transfer
-		if( amount < 0 || !pc_can_give_items(sd) )
+		if( !pc_can_give_items(sd) )
 			return false;
 
 		if( amount > sd->status.zeny )
@@ -85,7 +83,7 @@ bool mail_setitem(struct map_session_data *sd, short idx, unsigned short amount)
 
 		if( idx < 0 || idx >= MAX_INVENTORY )
 			return false;
-		if( amount < 0 || amount > sd->status.inventory[idx].amount )
+		if( amount > sd->status.inventory[idx].amount )
 			return false;
 		if( !pc_can_give_items(sd) || sd->status.inventory[idx].expire_time
 			|| !itemdb_available(sd->status.inventory[idx].nameid)

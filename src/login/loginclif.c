@@ -22,9 +22,7 @@
 #include "loginclif.h"
 #include "loginchrif.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 /**
  * Transmit auth result to client.
@@ -66,7 +64,7 @@ static void logclif_auth_ok(struct login_session_data* sd) {
 		logclif_sent_auth_result(fd,1); // server closed
 		return;
 	} else if( login_config.min_group_id_to_connect >= 0 && login_config.group_id_to_connect == -1 && sd->group_id < login_config.min_group_id_to_connect ) {
-		ShowStatus("Connection refused: the minium group id required for connection is %d (account: %s, group: %d).\n", login_config.min_group_id_to_connect, sd->userid, sd->group_id);
+		ShowStatus("Connection refused: the minimum group id required for connection is %d (account: %s, group: %d).\n", login_config.min_group_id_to_connect, sd->userid, sd->group_id);
 		logclif_sent_auth_result(fd,1); // server closed
 		return;
 	}
@@ -308,7 +306,7 @@ static int logclif_parse_reqauth(int fd, struct login_session_data *sd, int comm
 
 			version = RFIFOL(fd,4);
 
-			if(uAccLen > NAME_LENGTH - 1 || uAccLen <= 0 || uTokenLen > NAME_LENGTH - 1  || uTokenLen <= 0)
+			if(uAccLen > NAME_LENGTH - 1 || uAccLen == 0 || uTokenLen > NAME_LENGTH - 1  || uTokenLen == 0)
 			{
 				logclif_auth_failed(sd, 3);
 				return 0;
@@ -432,7 +430,7 @@ static int logclif_parse_reqcharconnec(int fd, struct login_session_data *sd, ch
 		if( runflag == LOGINSERVER_ST_RUNNING &&
 			result == -1 &&
 			sd->sex == 'S' &&
-			sd->account_id >= 0 && sd->account_id < ARRAYLENGTH(ch_server) &&
+			sd->account_id < ARRAYLENGTH(ch_server) &&
 			!session_isValid(ch_server[sd->account_id].fd) )
 		{
 			ShowStatus("Connection of the char-server '%s' accepted.\n", server_name);

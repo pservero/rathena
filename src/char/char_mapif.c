@@ -17,9 +17,7 @@
 #include "char_logif.h"
 #include "char_mapif.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 /**
  * Packet send to all map-servers, attach to ourself
@@ -396,7 +394,7 @@ int chmapif_parse_authok(int fd){
 	if( RFIFOREST(fd) < 19 )
 		return 0;
 	else{
-		int account_id = RFIFOL(fd,2);
+		uint32 account_id = RFIFOL(fd,2);
 		uint32 login_id1 = RFIFOL(fd,6);
 		uint32 login_id2 = RFIFOL(fd,10);
 		uint32 ip = RFIFOL(fd,14);
@@ -613,7 +611,7 @@ int chmapif_parse_askrmfriend(int fd){
 	if (RFIFOREST(fd) < 10)
 		return 0;
 	{
-		int char_id, friend_id;
+		uint32 char_id, friend_id;
 		char_id = RFIFOL(fd,2);
 		friend_id = RFIFOL(fd,6);
 		if( SQL_ERROR == Sql_Query(sql_handle, "DELETE FROM `%s` WHERE `char_id`='%d' AND `friend_id`='%d' LIMIT 1",
@@ -894,7 +892,7 @@ int chmapif_parse_save_scdata(int fd){
 
 		// Whatever comes from the mapserver, now is the time to drop previous entries
 		if( Sql_Query( sql_handle, "DELETE FROM `%s` where `account_id` = %d and `char_id` = %d;", schema_config.scdata_db, aid, cid ) != SQL_SUCCESS ){
-				Sql_ShowDebug( sql_handle );
+			Sql_ShowDebug( sql_handle );
 		}
 		else if( count > 0 )
 		{
@@ -945,10 +943,10 @@ int chmapif_parse_reqauth(int fd, int id){
             return 0;
 
     {
-        int account_id;
-        int char_id;
-        int login_id1;
-        char sex;
+        uint32 account_id;
+        uint32 char_id;
+        uint32 login_id1;
+        unsigned char sex;
         uint32 ip;
         struct auth_node* node;
         struct mmo_charstatus* cd;
@@ -969,12 +967,12 @@ int chmapif_parse_reqauth(int fd, int id){
         node = (struct auth_node*)idb_get(auth_db, account_id);
         cd = (struct mmo_charstatus*)uidb_get(char_db_,char_id);
         if( cd == NULL )
-        {	//Really shouldn't happen.
+        {	//Really shouldn't happen. (or autotrade)
                 char_mmo_char_fromsql(char_id, &char_dat, true);
                 cd = (struct mmo_charstatus*)uidb_get(char_db_,char_id);
         }
         if( runflag == CHARSERVER_ST_RUNNING && autotrade && cd ){
-            uint32 mmo_charstatus_len = sizeof(struct mmo_charstatus) + 25;
+            uint16 mmo_charstatus_len = sizeof(struct mmo_charstatus) + 25;
             cd->sex = sex;
 
             WFIFOHEAD(fd,mmo_charstatus_len);
@@ -999,7 +997,7 @@ int chmapif_parse_reqauth(int fd, int id){
             node->sex == sex /*&&
             node->ip == ip*/ )
         {// auth ok
-            uint32 mmo_charstatus_len = sizeof(struct mmo_charstatus) + 25;
+            uint16 mmo_charstatus_len = sizeof(struct mmo_charstatus) + 25;
             cd->sex = sex;
 
             WFIFOHEAD(fd,mmo_charstatus_len);
@@ -1205,7 +1203,8 @@ int chmapif_parse_reqcharban(int fd){
 				|| SQL_SUCCESS != SqlStmt_BindParam(stmt,  1, SQLDT_INT,    (void*)&t_cid,     sizeof(t_cid))
 				|| SQL_SUCCESS != SqlStmt_Execute(stmt)
 
-				) {
+				)
+			{
 				SqlStmt_ShowDebug(stmt);
 				SqlStmt_Free(stmt);
 				return 1;
@@ -1229,13 +1228,13 @@ int chmapif_parse_reqcharban(int fd){
 }
 
 int chmapif_parse_reqcharunban(int fd){
-	if (RFIFOREST(fd) < 6)
-            return 0;
+	if (RFIFOREST(fd) < 6+NAME_LENGTH)
+		return 0;
 	else {
-		int cid = RFIFOL(fd,2);
-		RFIFOSKIP(fd,6);
+		const char* name = (char*)RFIFOP(fd,6);
+		RFIFOSKIP(fd,6+NAME_LENGTH);
 
-		if( SQL_ERROR == Sql_Query(sql_handle, "UPDATE `%s` SET `unban_time` = '0' WHERE `char_id` = '%d' LIMIT 1", schema_config.char_db, cid) ) {
+		if( SQL_ERROR == Sql_Query(sql_handle, "UPDATE `%s` SET `unban_time` = '0' WHERE `name` = '%s' LIMIT 1", schema_config.char_db, name) ) {
 			Sql_ShowDebug(sql_handle);
 			return 1;
 		}
@@ -1249,7 +1248,7 @@ int chmapif_parse_reqcharunban(int fd){
 */
 int chmapif_bonus_script_get(int fd) {
 	if (RFIFOREST(fd) < 6)
-            return 0;
+		return 0;
 	else {
 		int cid;
 		cid = RFIFOL(fd,2);
@@ -1301,7 +1300,7 @@ int chmapif_bonus_script_get(int fd) {
 */
 int chmapif_bonus_script_save(int fd) {
 	if (RFIFOREST(fd) < 4 || RFIFOREST(fd) < RFIFOW(fd,2))
-            return 0;
+		return 0;
 	else {
 		int count, cid;
 
@@ -1342,7 +1341,7 @@ int chmapif_bonus_script_save(int fd) {
  */
 int chmapif_parse(int fd){
 	int id; //mapserv id
-        
+
 	ARR_FIND( 0, ARRAYLENGTH(map_server), id, map_server[id].fd == fd );
 	if( id == ARRAYLENGTH(map_server) )
 	{// not a map server
@@ -1361,47 +1360,47 @@ int chmapif_parse(int fd){
 	while(RFIFOREST(fd) >= 2){
 		int next=1;
 		switch(RFIFOW(fd,0)){
-            case 0x2736: next=chmapif_parse_updmapip(fd,id); break;
-            case 0x2afa: next=chmapif_parse_getmapname(fd,id); break;
-            case 0x2afc: next=chmapif_parse_askscdata(fd); break;
-            case 0x2afe: next=chmapif_parse_getusercount(fd,id); break; //get nb user
-            case 0x2aff: next=chmapif_parse_regmapuser(fd,id); break; //register users
-            case 0x2b01: next=chmapif_parse_reqsavechar(fd,id); break;
-            case 0x2b02: next=chmapif_parse_authok(fd); break;
-            case 0x2b05: next=chmapif_parse_reqchangemapserv(fd); break;
-            case 0x2b07: next=chmapif_parse_askrmfriend(fd); break;
-            case 0x2b08: next=chmapif_parse_reqcharname(fd); break;
-            case 0x2b0a: next=chmapif_parse_req_skillcooldown(fd); break;
-            case 0x2b0c: next=chmapif_parse_reqnewemail(fd); break;
-            case 0x2b0e: next=chmapif_parse_fwlog_changestatus(fd); break;
-            case 0x2b10: next=chmapif_parse_updfamelist(fd); break;
-            case 0x2b11: next=chmapif_parse_reqdivorce(fd); break;
-            case 0x2b15: next=chmapif_parse_req_saveskillcooldown(fd); break;
-            case 0x2b16: next=chmapif_parse_updmapinfo(fd); break;
-            case 0x2b17: next=chmapif_parse_setcharoffline(fd); break;
-            case 0x2b18: next=chmapif_parse_setalloffline(fd,id); break;
-            case 0x2b19: next=chmapif_parse_setcharonline(fd,id); break;
-            case 0x2b1a: next=chmapif_parse_reqfamelist(fd); break;
-            case 0x2b1c: next=chmapif_parse_save_scdata(fd); break;
-            case 0x2b23: next=chmapif_parse_keepalive(fd); break;
-            case 0x2b26: next=chmapif_parse_reqauth(fd,id); break;
-            case 0x2b28: chmapif_parse_reqcharban(fd); break; //charban
-            case 0x2b2a: chmapif_parse_reqcharunban(fd); break; //charunban
-            //case 0x2b2c: /*free*/; break;
-            case 0x2b2d: chmapif_bonus_script_get(fd); break; //Load data
-            case 0x2b2e: chmapif_bonus_script_save(fd); break;//Save data
-            case 0x3008: next=chmapif_parse_fw_configstats(fd); break;
-            default:
-            {
-                    // inter server - packet
-                    int r = inter_parse_frommap(fd);
-                    if (r == 1) break;		// processed
-                    if (r == 2) return 0;	// need more packet
-                    // no inter server packet. no char server packet -> disconnect
-                    ShowError("Unknown packet 0x%04x from map server, disconnecting.\n", RFIFOW(fd,0));
-                    set_eof(fd);
-                    return 0;
-            }
+			case 0x2736: next=chmapif_parse_updmapip(fd,id); break;
+			case 0x2afa: next=chmapif_parse_getmapname(fd,id); break;
+			case 0x2afc: next=chmapif_parse_askscdata(fd); break;
+			case 0x2afe: next=chmapif_parse_getusercount(fd,id); break; //get nb user
+			case 0x2aff: next=chmapif_parse_regmapuser(fd,id); break; //register users
+			case 0x2b01: next=chmapif_parse_reqsavechar(fd,id); break;
+			case 0x2b02: next=chmapif_parse_authok(fd); break;
+			case 0x2b05: next=chmapif_parse_reqchangemapserv(fd); break;
+			case 0x2b07: next=chmapif_parse_askrmfriend(fd); break;
+			case 0x2b08: next=chmapif_parse_reqcharname(fd); break;
+			case 0x2b0a: next=chmapif_parse_req_skillcooldown(fd); break;
+			case 0x2b0c: next=chmapif_parse_reqnewemail(fd); break;
+			case 0x2b0e: next=chmapif_parse_fwlog_changestatus(fd); break;
+			case 0x2b10: next=chmapif_parse_updfamelist(fd); break;
+			case 0x2b11: next=chmapif_parse_reqdivorce(fd); break;
+			case 0x2b15: next=chmapif_parse_req_saveskillcooldown(fd); break;
+			case 0x2b16: next=chmapif_parse_updmapinfo(fd); break;
+			case 0x2b17: next=chmapif_parse_setcharoffline(fd); break;
+			case 0x2b18: next=chmapif_parse_setalloffline(fd,id); break;
+			case 0x2b19: next=chmapif_parse_setcharonline(fd,id); break;
+			case 0x2b1a: next=chmapif_parse_reqfamelist(fd); break;
+			case 0x2b1c: next=chmapif_parse_save_scdata(fd); break;
+			case 0x2b23: next=chmapif_parse_keepalive(fd); break;
+			case 0x2b26: next=chmapif_parse_reqauth(fd,id); break;
+			case 0x2b28: next=chmapif_parse_reqcharban(fd); break; //charban
+			case 0x2b2a: next=chmapif_parse_reqcharunban(fd); break; //charunban
+			//case 0x2b2c: /*free*/; break;
+			case 0x2b2d: next=chmapif_bonus_script_get(fd); break; //Load data
+			case 0x2b2e: next=chmapif_bonus_script_save(fd); break;//Save data
+			case 0x3008: next=chmapif_parse_fw_configstats(fd); break;
+			default:
+			{
+					// inter server - packet
+					int r = inter_parse_frommap(fd);
+					if (r == 1) break;		// processed
+					if (r == 2) return 0;	// need more packet
+					// no inter server packet. no char server packet -> disconnect
+					ShowError("Unknown packet 0x%04x from map server, disconnecting.\n", RFIFOW(fd,0));
+					set_eof(fd);
+					return 0;
+			}
 		} // switch
 		if(next==0) return 0; //avoid processing rest of packet
 	} // while

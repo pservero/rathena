@@ -7,10 +7,10 @@
 #include "map.h" // struct block_list
 #include "status.h" // struct status_change
 #include "unit.h" // struct unit_data
+
 struct block_list;
 struct npc_data;
 struct view_data;
-
 
 struct npc_timerevent_list {
 	int timer,pos;
@@ -75,8 +75,6 @@ struct npc_data {
 		} tomb;
 	} u;
 };
-
-
 
 #define START_NPC_NUM 110000000
 
@@ -148,9 +146,9 @@ bool npc_isnear(struct block_list * bl);
 
 int npc_get_new_npc_id(void);
 
-void npc_addsrcfile(const char* name);
+int npc_addsrcfile(const char* name);
 void npc_delsrcfile(const char* name);
-void npc_parsesrcfile(const char* filepath, bool runOnInit);
+int npc_parsesrcfile(const char* filepath, bool runOnInit);
 void do_clear_npc(void);
 void do_final_npc(void);
 void do_init_npc(void);

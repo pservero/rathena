@@ -19,7 +19,6 @@
 #include "../common/timer.h"
 #include "../common/msg_conf.h"
 #include "../common/cli.h"
-#include "../common/ers.h"
 #include "../common/utils.h"
 #include "../common/mmo.h"
 #include "../config/core.h"
@@ -31,9 +30,7 @@
 #include "loginchrif.h"
 #include "logincnslif.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define LOGIN_MAX_MSG 30				/// Max number predefined in msg_conf
 static char* msg_table[LOGIN_MAX_MSG];	/// Login Server messages_conf
@@ -44,30 +41,6 @@ struct Login_Config login_config;				/// Configuration of login-serv
 DBMap* online_db;
 DBMap* auth_db;
 
-// Account engines available
-static struct{
-	AccountDB* (*constructor)(void);
-	AccountDB* db;
-} account_engines[] = {
-	{account_db_sql, NULL},
-#ifdef ACCOUNTDB_ENGINE_0
-	{ACCOUNTDB_CONSTRUCTOR(ACCOUNTDB_ENGINE_0), NULL},
-#endif
-#ifdef ACCOUNTDB_ENGINE_1
-	{ACCOUNTDB_CONSTRUCTOR(ACCOUNTDB_ENGINE_1), NULL},
-#endif
-#ifdef ACCOUNTDB_ENGINE_2
-	{ACCOUNTDB_CONSTRUCTOR(ACCOUNTDB_ENGINE_2), NULL},
-#endif
-#ifdef ACCOUNTDB_ENGINE_3
-	{ACCOUNTDB_CONSTRUCTOR(ACCOUNTDB_ENGINE_3), NULL},
-#endif
-#ifdef ACCOUNTDB_ENGINE_4
-	{ACCOUNTDB_CONSTRUCTOR(ACCOUNTDB_ENGINE_4), NULL},
-#endif
-	// end of structure
-	{NULL, NULL}
-};
 // account database
 AccountDB* accounts = NULL;
 // Advanced subnet check [LuzZza]
@@ -86,31 +59,6 @@ bool login_check_password(const char* md5key, int passwdenc, const char* passwd,
 ///Accessors
 AccountDB* login_get_accounts_db(void){
 	return accounts;
-}
-
-/**
- * Get the engine selected in the config settings.
- *  Updates the config setting with the selected engine if 'auto'.
- * @param key: Key of the database entry
- * @param ap: args
- * @return : Data identified by the key to be put in the database
- */
-static AccountDB* get_account_engine(void) {
-	int i;
-	bool get_first = (strcmp(login_config.account_engine,"auto") == 0);
-
-	for( i = 0; account_engines[i].constructor; ++i ) {
-		char name[sizeof(login_config.account_engine)];
-		AccountDB* db = account_engines[i].db;
-		if( db && db->get_property(db, "engine.name", name, sizeof(name)) &&
-			(get_first || strcmp(name, login_config.account_engine) == 0) )
-		{
-			if( get_first )
-				safestrncpy(login_config.account_engine, name, sizeof(login_config.account_engine));
-			return db;
-		}
-	}
-	return NULL;
 }
 
 // Console Command Parser [Wizputer]
@@ -142,7 +90,7 @@ DBData login_create_online_user(DBKey key, va_list args) {
  * @param account_id : aid connected
  * @return the new online_login_data for that user
  */
-struct online_login_data* login_add_online_user(int char_server, int account_id){
+struct online_login_data* login_add_online_user(int char_server, uint32 account_id){
 	struct online_login_data* p;
 	p = idb_ensure(online_db, account_id, login_create_online_user);
 	p->char_server = char_server;
@@ -159,7 +107,7 @@ struct online_login_data* login_add_online_user(int char_server, int account_id)
  *  Checking if user was already scheduled for deletion, and remove that timer if found.
  * @param account_id : aid to remove from db
  */
-void login_remove_online_user(int account_id) {
+void login_remove_online_user(uint32 account_id) {
 	struct online_login_data* p;
 	p = (struct online_login_data*)idb_get(online_db, account_id);
 	if( p == NULL )
@@ -587,21 +535,37 @@ int login_lan_config_read(const char *lancfgName) {
 /**
  * Reading main configuration file.
  * @param cfgName: Name of the configuration (could be fullpath)
- * @return 0:success, 1:failure (file not found|readable)
+ * @param normal: Config read normally when server started
+ * @return True:success, Fals:failure (file not found|readable)
  */
-int login_config_read(const char* cfgName) {
-	char line[1024], w1[1024], w2[1024];
+bool login_config_read(const char* cfgName, bool normal) {
+	char line[1024], w1[32], w2[1024];
 	FILE* fp = fopen(cfgName, "r");
 	if (fp == NULL) {
 		ShowError("Configuration file (%s) not found.\n", cfgName);
-		return 1;
+		return false;
 	}
 	while(fgets(line, sizeof(line), fp)) {
 		if (line[0] == '/' && line[1] == '/')
 			continue;
 
-		if (sscanf(line, "%1023[^:]: %1023[^\r\n]", w1, w2) < 2)
+		if (sscanf(line, "%31[^:]: %1023[^\r\n]", w1, w2) < 2)
 			continue;
+
+		// Config that loaded only when server started, not by reloading config file
+		if (normal) {
+			if( !strcmpi(w1, "bind_ip") ) {
+				login_config.login_ip = host2ip(w2);
+				if( login_config.login_ip ) {
+					char ip_str[16];
+					ShowStatus("Login server binding IP address : %s -> %s\n", w2, ip2str(login_config.login_ip, ip_str));
+				}
+			}
+			else if( !strcmpi(w1, "login_port") )
+				login_config.login_port = (uint16)atoi(w2);
+			else if(!strcmpi(w1, "console"))
+				login_config.console = (bool)config_switch(w2);
+		}
 
 		if(!strcmpi(w1,"timestamp_format"))
 			safestrncpy(timestamp_format, w2, 20);
@@ -614,16 +578,7 @@ int login_config_read(const char* cfgName) {
 			if( msg_silent ) /* only bother if we actually have this enabled */
 				ShowInfo("Console Silent Setting: %d\n", atoi(w2));
 		}
-		else if( !strcmpi(w1, "bind_ip") ) {
-			login_config.login_ip = host2ip(w2);
-			if( login_config.login_ip ) {
-				char ip_str[16];
-				ShowStatus("Login server binding IP address : %s -> %s\n", w2, ip2str(login_config.login_ip, ip_str));
-			}
-		}
-		else if( !strcmpi(w1, "login_port") ) {
-			login_config.login_port = (uint16)atoi(w2);
-		} else if(!strcmpi(w1, "log_login"))
+		else if(!strcmpi(w1, "log_login"))
 			login_config.log_login = (bool)config_switch(w2);
 		else if(!strcmpi(w1, "new_account"))
 			login_config.new_account_flag = (bool)config_switch(w2);
@@ -643,8 +598,6 @@ int login_config_read(const char* cfgName) {
 			login_config.min_group_id_to_connect = atoi(w2);
 		else if(!strcmpi(w1, "date_format"))
 			safestrncpy(login_config.date_format, w2, sizeof(login_config.date_format));
-		else if(!strcmpi(w1, "console"))
-			login_config.console = (bool)config_switch(w2);
 		else if(!strcmpi(w1, "allowed_regs")) //account flood protection system
 			login_config.allowed_regs = atoi(w2);
 		else if(!strcmpi(w1, "time_allowed"))
@@ -706,17 +659,12 @@ int login_config_read(const char* cfgName) {
 		}
 #endif
 		else if(!strcmpi(w1, "import"))
-			login_config_read(w2);
-		else if(!strcmpi(w1, "account.engine"))
-			safestrncpy(login_config.account_engine, w2, sizeof(login_config.account_engine));
+			login_config_read(w2, normal);
 		else {// try the account engines
-			int i;
-			for( i = 0; account_engines[i].constructor; ++i )
-			{
-				AccountDB* db = account_engines[i].db;
-				if( db && db->set_property(db, w1, w2) )
-					break;
-			}
+			if (!normal)
+				continue;
+			if (accounts && accounts->set_property(accounts, w1, w2))
+				continue;
 			// try others
 			ipban_config_read(w1, w2);
 			loginlog_config_read(w1, w2);
@@ -724,7 +672,7 @@ int login_config_read(const char* cfgName) {
 	}
 	fclose(fp);
 	ShowInfo("Finished reading %s.\n", cfgName);
-	return 0;
+	return true;
 }
 
 /**
@@ -754,7 +702,6 @@ void login_set_defaults() {
 	login_config.dynamic_pass_failure_ban_duration = 5;
 	login_config.use_dnsbl = false;
 	safestrncpy(login_config.dnsbl_servs, "", sizeof(login_config.dnsbl_servs));
-	safestrncpy(login_config.account_engine, "auto", sizeof(login_config.account_engine));
 	login_config.allowed_regs = 1;
 	login_config.time_allowed = 10; //in second
 
@@ -782,8 +729,8 @@ void login_set_defaults() {
  *  dealloc..., function called at exit of the login-serv
  */
 void do_final(void) {
-	int i;
 	struct client_hash_node *hn = login_config.client_hash_nodes;
+	AccountDB* db = accounts;
 
 	while (hn)
 	{
@@ -803,16 +750,12 @@ void do_final(void) {
 	do_final_loginclif();
 	do_final_logincnslif();
 
-	for( i = 0; account_engines[i].constructor; ++i )
-	{// destroy all account engines
-		AccountDB* db = account_engines[i].db;
-		if( db )
-		{
-			db->destroy(db);
-			account_engines[i].db = NULL;
-		}
+	if (db) { // destroy account engine
+		db->destroy(db);
+		db = NULL;
 	}
-	accounts = NULL; // destroyed in account_engines
+
+	accounts = NULL; // destroyed in account_engine
 	online_db->destroy(online_db, NULL);
 	auth_db->destroy(auth_db, NULL);
 
@@ -864,18 +807,16 @@ void set_server_type(void) {
  * @return 0 everything ok else stopping programme execution.
  */
 int do_init(int argc, char** argv) {
-	int i;
-	
 	runflag = LOGINSERVER_ST_STARTING;
-	// intialize engines (to accept config settings)
-	for( i = 0; account_engines[i].constructor; ++i )
-		account_engines[i].db = account_engines[i].constructor();
+
+	// initialize engine
+	accounts = account_db_sql();
 
 	// read login-server configuration
 	login_set_defaults();
 	logcnslif_get_options(argc,argv);
 
-	login_config_read(login_config.loginconf_name);
+	login_config_read(login_config.loginconf_name, true);
 	msg_config_read(login_config.msgconf_name);
 	login_lan_config_read(login_config.lanconf_name);
 	//end config
@@ -907,14 +848,12 @@ int do_init(int argc, char** argv) {
 	add_timer_interval(gettick() + 600*1000, login_online_data_cleanup, 0, 0, 600*1000);
 
 	// Account database init
-	accounts = get_account_engine();
 	if( accounts == NULL ) {
-		ShowFatalError("do_init: account engine '%s' not found.\n", login_config.account_engine);
+		ShowFatalError("do_init: account engine not found.\n");
 		exit(EXIT_FAILURE);
 	} else {
-
 		if(!accounts->init(accounts)) {
-			ShowFatalError("do_init: Failed to initialize account engine '%s'.\n", login_config.account_engine);
+			ShowFatalError("do_init: Failed to initialize account engine.\n");
 			exit(EXIT_FAILURE);
 		}
 	}

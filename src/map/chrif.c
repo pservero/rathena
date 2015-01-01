@@ -17,21 +17,14 @@
 #include "npc.h"
 #include "pc.h"
 #include "pet.h"
-#include "skill.h"
-#include "status.h"
 #include "homunculus.h"
 #include "instance.h"
 #include "mercenary.h"
 #include "elemental.h"
 #include "chrif.h"
-#include "quest.h"
 #include "storage.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <time.h>
 
 static int check_connect_char_server(int tid, unsigned int tick, int id, intptr_t data);
 int chrif_save_bankdata(struct map_session_data *sd);
@@ -143,17 +136,17 @@ void chrif_check_shutdown(void) {
 	runflag = CORE_ST_STOP;
 }
 
-struct auth_node* chrif_search(int account_id) {
+struct auth_node* chrif_search(uint32 account_id) {
 	return (struct auth_node*)idb_get(auth_db, account_id);
 }
 
-struct auth_node* chrif_auth_check(int account_id, int char_id, enum sd_state state) {
+struct auth_node* chrif_auth_check(uint32 account_id, uint32 char_id, enum sd_state state) {
 	struct auth_node *node = chrif_search(account_id);
 
 	return ( node && node->char_id == char_id && node->state == state ) ? node : NULL;
 }
 
-bool chrif_auth_delete(int account_id, int char_id, enum sd_state state) {
+bool chrif_auth_delete(uint32 account_id, uint32 char_id, enum sd_state state) {
 	struct auth_node *node;
 
 	if ( (node = chrif_auth_check(account_id, char_id, state) ) ) {
@@ -280,18 +273,17 @@ int chrif_isconnected(void) {
  * Flag = 3: Character used @autotrade
  *------------------------------------------*/
 int chrif_save(struct map_session_data *sd, int flag) {
-	uint32 mmo_charstatus_len = 0;
+	uint16 mmo_charstatus_len = 0;
 	nullpo_retr(-1, sd);
 
 	pc_makesavestatus(sd);
 
 	if (flag && sd->state.active) { //Store player data which is quitting
-		//FIXME: SC are lost if there's no connection at save-time because of the way its related data is cleared immediately after this function. [Skotlex]
 		if (chrif_isconnected()) {
 			chrif_save_scdata(sd);
 			chrif_skillcooldown_save(sd);
 			chrif_save_bsdata(sd);
-			chrif_req_login_operation(sd->status.account_id, sd->status.name, 7, 0, 2, sd->status.bank_vault); //save Bank data
+			chrif_req_login_operation(sd->status.account_id, sd->status.name, CHRIF_OP_LOGIN_BANK, 0, 2, sd->status.bank_vault); //save Bank data
 		}
 		if ( flag != 3 && !chrif_auth_logout(sd,flag == 1 ? ST_LOGOUT : ST_MAPCHANGE) )
 			ShowError("chrif_save: Failed to set up player %d:%d for proper quitting!\n", sd->status.account_id, sd->status.char_id);
@@ -463,7 +455,7 @@ int chrif_changemapserver(struct map_session_data* sd, uint32 ip, uint16 port) {
 
 /// map-server change request acknowledgement (positive or negative)
 /// R 2b06 <account_id>.L <login_id1>.L <login_id2>.L <char_id>.L <map_index>.W <x>.W <y>.W <ip>.L <port>.W
-int chrif_changemapserverack(int account_id, int login_id1, int login_id2, int char_id, short map_index, short x, short y, uint32 ip, uint16 port) {
+int chrif_changemapserverack(uint32 account_id, int login_id1, int login_id2, uint32 char_id, short map_index, short x, short y, uint32 ip, uint16 port) {
 	struct auth_node *node;
 
 	if ( !( node = chrif_auth_check(account_id, char_id, ST_MAPCHANGE) ) )
@@ -590,7 +582,7 @@ int chrif_sendmapack(int fd) {
 /*==========================================
  * Request sc_data from charserver [Skotlex]
  *------------------------------------------*/
-int chrif_scdata_request(int account_id, int char_id) {
+int chrif_scdata_request(uint32 account_id, uint32 char_id) {
 
 #ifdef ENABLE_SC_SAVING
 	chrif_check(-1);
@@ -607,7 +599,7 @@ int chrif_scdata_request(int account_id, int char_id) {
 /*==========================================
  * Request skillcooldown from charserver
  *------------------------------------------*/
-int chrif_skillcooldown_request(int account_id, int char_id) {
+int chrif_skillcooldown_request(uint32 account_id, uint32 char_id) {
 	chrif_check(-1);
 	WFIFOHEAD(char_fd, 10);
 	WFIFOW(char_fd, 0) = 0x2b0a;
@@ -644,7 +636,7 @@ void chrif_authreq(struct map_session_data *sd, bool autotrade) {
  * Auth confirmation ack
  *------------------------------------------*/
 void chrif_authok(int fd) {
-	int account_id, group_id, char_id;
+	uint32 account_id, group_id, char_id;
 	uint32 login_id1,login_id2;
 	time_t expiration_time;
 	struct mmo_charstatus* status;
@@ -707,7 +699,7 @@ void chrif_authok(int fd) {
 
 // client authentication failed
 void chrif_authfail(int fd) {/* HELLO WORLD. ip in RFIFOL 15 is not being used (but is available) */
-	int account_id, char_id;
+	uint32 account_id, char_id;
 	uint32 login_id1;
 	char sex;
 	struct auth_node* node;
@@ -791,7 +783,7 @@ int chrif_charselectreq(struct map_session_data* sd, uint32 s_ip) {
 /*==========================================
  * Search Char trough id on char serv
  *------------------------------------------*/
-int chrif_searchcharid(int char_id) {
+int chrif_searchcharid(uint32 char_id) {
 
 	if( !char_id )
 		return -1;
@@ -831,7 +823,7 @@ int chrif_changeemail(int id, const char *actual_email, const char *new_email) {
  * Send an account modification request to the login server (via char server).
  * @aid : Player requesting operation account id
  * @character_name : Target of operation Player name
- * @operation_type : 1: block, 2: ban, 3: unblock, 4: unban, 5: changesex (use next function for 5), 6 vip, 7 bank 
+ * @operation_type : see chrif_req_op
  * @timediff : tick to add or remove to unixtimestamp
  * @val1 : extra data value to transfer for operation
  * @val2 : extra data value to transfer for operation
@@ -845,15 +837,19 @@ int chrif_req_login_operation(int aid, const char* character_name, unsigned shor
 	safestrncpy((char*)WFIFOP(char_fd,6), character_name, NAME_LENGTH);
 	WFIFOW(char_fd,30) = operation_type;
 
-	if ( operation_type == 2 || operation_type == 6)
+	if ( operation_type == CHRIF_OP_LOGIN_BAN || operation_type == CHRIF_OP_LOGIN_VIP)
 		WFIFOL(char_fd,32) = timediff;
 	WFIFOL(char_fd,36) = val1;
 	WFIFOL(char_fd,40) = val2;
-
 	WFIFOSET(char_fd,44);
 	return 0;
 }
 
+/**
+ * S 2b0e <accid>.l <name>.24B <operation_type>.w <timediff>L <val1>L <val2>L
+ * Send an account modification (changesex) request to the login server (via char server).
+ * @sd : Player requesting operation
+ */
 int chrif_changesex(struct map_session_data *sd) {
 	chrif_check(-1);
 
@@ -861,7 +857,7 @@ int chrif_changesex(struct map_session_data *sd) {
 	WFIFOW(char_fd,0) = 0x2b0e;
 	WFIFOL(char_fd,2) = sd->status.account_id;
 	safestrncpy((char*)WFIFOP(char_fd,6), sd->status.name, NAME_LENGTH);
-	WFIFOW(char_fd,30) = 5;
+	WFIFOW(char_fd,30) = CHRIF_OP_LOGIN_CHANGESEX;
 	WFIFOSET(char_fd,44);
 
 	clif_displaymessage(sd->fd, msg_txt(sd,408)); //"Need disconnection to perform change-sex request..."
@@ -879,8 +875,7 @@ int chrif_changesex(struct map_session_data *sd) {
  * NB: That ack is received just after the char has sent the request to login and therefore didn't have login reply yet
  * @param aid : player account id the request was concerning
  * @param player_name : name the request was concerning
- * @param type : code of operation done:
- *   1: block, 2: ban, 3: unblock, 4: unban, 5: changesex, 6: vip, 7: bank
+ * @param type : code of operation done. See enum chrif_req_op
  * @param answer : type of answer
  *   0: login-server request done
  *   1: player not found
@@ -898,16 +893,29 @@ static void chrif_ack_login_req(int aid, const char* player_name, uint16 type, u
 		ShowError("chrif_ack_login_req failed - player not online.\n");
 		return;
 	}
-	
-	if( type > 0 && type <= 5 )
-		snprintf(action,25,"%s",msg_txt(sd,427+type)); //block|ban|unblock|unban|change the sex of
-	else if(type == 6) snprintf(action,25,"%s",msg_txt(sd,436)); //VIP
-	else if(type == 7) {
-		if (!battle_config.disp_serverbank_msg)
-			return;
-		snprintf(action,25,"%s","bank");
-	} else
-		snprintf(action,25,"???");
+
+	switch (type) {
+		case CHRIF_OP_LOGIN_BLOCK:
+		case CHRIF_OP_LOGIN_BAN:
+		case CHRIF_OP_LOGIN_UNBLOCK:
+		case CHRIF_OP_LOGIN_UNBAN:
+		case CHRIF_OP_LOGIN_CHANGESEX:
+			snprintf(action,25,"%s",msg_txt(sd,427+type)); //block|ban|unblock|unban|change the sex of
+			break;
+		case CHRIF_OP_LOGIN_VIP:
+			if (!battle_config.disp_servervip_msg)
+				return;
+			snprintf(action,25,"%s",msg_txt(sd,436)); //VIP
+			break;
+		case CHRIF_OP_LOGIN_BANK:
+			if (!battle_config.disp_serverbank_msg)
+				return;
+			snprintf(action,25,"%s","bank");
+			break;
+		default:
+			snprintf(action,25,"???");
+			break;
+	}
 
 	switch( answer ) {
 		case 0: sprintf(output, msg_txt(sd,424), action, NAME_LENGTH, player_name); break; //Login-serv has been asked to %s '%.*s'.
@@ -994,7 +1002,7 @@ int chrif_divorce(int partner_id1, int partner_id2) {
  * Divorce players
  * only used if 'partner_id' is offline
  *------------------------------------------*/
-int chrif_divorceack(int char_id, int partner_id) {
+int chrif_divorceack(uint32 char_id, int partner_id) {
 	struct map_session_data* sd;
 	int i;
 
@@ -1022,20 +1030,21 @@ int chrif_divorceack(int char_id, int partner_id) {
  *------------------------------------------*/
 int chrif_deadopt(int father_id, int mother_id, int child_id) {
 	struct map_session_data* sd;
+	int idx = skill_get_index(WE_CALLBABY);
 
 	if( father_id && ( sd = map_charid2sd(father_id) ) != NULL && sd->status.child == child_id ) {
 		sd->status.child = 0;
-		sd->status.skill[WE_CALLBABY].id = 0;
-		sd->status.skill[WE_CALLBABY].lv = 0;
-		sd->status.skill[WE_CALLBABY].flag = SKILL_FLAG_PERMANENT;
+		sd->status.skill[idx].id = 0;
+		sd->status.skill[idx].lv = 0;
+		sd->status.skill[idx].flag = SKILL_FLAG_PERMANENT;
 		clif_deleteskill(sd,WE_CALLBABY);
 	}
 
 	if( mother_id && ( sd = map_charid2sd(mother_id) ) != NULL && sd->status.child == child_id ) {
 		sd->status.child = 0;
-		sd->status.skill[WE_CALLBABY].id = 0;
-		sd->status.skill[WE_CALLBABY].lv = 0;
-		sd->status.skill[WE_CALLBABY].flag = SKILL_FLAG_PERMANENT;
+		sd->status.skill[idx].id = 0;
+		sd->status.skill[idx].lv = 0;
+		sd->status.skill[idx].flag = SKILL_FLAG_PERMANENT;
 		clif_deleteskill(sd,WE_CALLBABY);
 	}
 
@@ -1099,13 +1108,14 @@ int chrif_req_charban(int aid, const char* character_name, int32 timediff){
 	return 0;
 }
 
-int chrif_req_charunban(int cid){
+int chrif_req_charunban(int aid, const char* character_name){
 	chrif_check(-1);
 	
-	WFIFOHEAD(char_fd,6);
+	WFIFOHEAD(char_fd,6+NAME_LENGTH);
 	WFIFOW(char_fd,0) = 0x2b2a;
-	WFIFOL(char_fd,2) = cid;
-	WFIFOSET(char_fd,6);
+	WFIFOL(char_fd,2) = aid;
+	safestrncpy((char*)WFIFOP(char_fd,6), character_name, NAME_LENGTH);
+	WFIFOSET(char_fd,6+NAME_LENGTH);
 	return 0;
 }
 
@@ -1113,7 +1123,7 @@ int chrif_req_charunban(int cid){
 //packet.w AID.L WHY.B 2+4+1 = 7byte
 int chrif_disconnectplayer(int fd) {
 	struct map_session_data* sd;
-	int account_id = RFIFOL(fd, 2);
+	uint32 account_id = RFIFOL(fd, 2);
 
 	sd = map_id2sd(account_id);
 	if( sd == NULL ) {
@@ -1129,6 +1139,9 @@ int chrif_disconnectplayer(int fd) {
 		if (sd->state.autotrade){
 			if( sd->state.vending ){
 				vending_closevending(sd);
+			}
+			else if( sd->state.buyingstore ){
+				buyingstore_close(sd);
 			}
 
 			map_quit(sd); //Remove it.
@@ -1285,9 +1298,12 @@ int chrif_save_scdata(struct map_session_data *sd) { //parses the sc_data of the
 			continue;
 		if (sc->data[i]->timer != INVALID_TIMER) {
 			timer = get_timer(sc->data[i]->timer);
-			if (timer == NULL || timer->func != status_change_timer || DIFF_TICK(timer->tick,tick) < 0)
+			if (timer == NULL || timer->func != status_change_timer)
 				continue;
-			data.tick = DIFF_TICK(timer->tick,tick); //Duration that is left before ending.
+			if (DIFF_TICK(timer->tick,tick) > 0)
+				data.tick = DIFF_TICK(timer->tick,tick); //Duration that is left before ending.
+			else
+				data.tick = 0; //Negative tick does not necessarily mean that sc has expired
 		} else
 			data.tick = -1; //Infinite duration
 		data.type = i;
@@ -1373,7 +1389,7 @@ int chrif_load_scdata(int fd) {
 	for (i = 0; i < count; i++) {
 		struct status_change_data *data = (struct status_change_data*)RFIFOP(fd,14 + i*sizeof(struct status_change_data));
 
-		status_change_start(NULL,&sd->bl, (sc_type)data->type, 10000, data->val1, data->val2, data->val3, data->val4, data->tick, 1|2|4|8);
+		status_change_start(NULL,&sd->bl, (sc_type)data->type, 10000, data->val1, data->val2, data->val3, data->val4, data->tick, SCSTART_NOAVOID|SCSTART_NOTICKDEF|SCSTART_LOADED|SCSTART_NORATEDEF);
 	}
 
 	pc_scdata_received(sd);
@@ -1402,7 +1418,7 @@ int chrif_skillcooldown_load(int fd) {
 	count = RFIFOW(fd, 12); //sc_count
 	for (i = 0; i < count; i++) {
 		struct skill_cooldown_data *data = (struct skill_cooldown_data*) RFIFOP(fd, 14 + i * sizeof (struct skill_cooldown_data));
-		skill_blockpc_start(sd, data->skill_id, data->tick);
+			skill_blockpc_start(sd, data->skill_id, data->tick);
 	}
 	return 0;
 }
@@ -1439,7 +1455,7 @@ int chrif_char_offline(struct map_session_data *sd) {
 
 	return 0;
 }
-int chrif_char_offline_nsd(int account_id, int char_id) {
+int chrif_char_offline_nsd(uint32 account_id, uint32 char_id) {
 	chrif_check(-1);
 
 	WFIFOHEAD(char_fd,10);
@@ -1756,7 +1772,7 @@ static int check_connect_char_server(int tid, unsigned int tick, int id, intptr_
 /*==========================================
  * Asks char server to remove friend_id from the friend list of char_id
  *------------------------------------------*/
-int chrif_removefriend(int char_id, int friend_id) {
+int chrif_removefriend(uint32 char_id, int friend_id) {
 
 	chrif_check(-1);
 
@@ -1786,7 +1802,7 @@ int chrif_send_report(char* buf, int len) {
 * Requets bonus_script datas
 * @param char_id
 */
-int chrif_bsdata_request(int char_id) {
+int chrif_bsdata_request(uint32 char_id) {
 	chrif_check(-1);
 	WFIFOHEAD(char_fd,6);
 	WFIFOW(char_fd,0) = 0x2b2d;

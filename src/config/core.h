@@ -37,20 +37,17 @@
 //#define BETA_THREAD_TEST
 
 /// Uncomment to enable the Cell Stack Limit mod.
-/// It's only config is the battle_config cell_stack_limit.
-/// Only chars affected are those defined in BL_CHAR (mobs and players currently)
+/// It's only config is the battle_config custom_cell_stack_limit.
+/// Only chars affected are those defined in BL_CHAR
 //#define CELL_NOSTACK
 
 /// Uncomment to enable circular area checks.
-/// By default, all range checks in Aegis are of Square shapes, so a weapon range
-/// - of 10 allows you to attack from anywhere within a 21x21 area.
-/// Enabling this changes such checks to circular checks, which is more realistic,
+/// By default, most server-sided range checks in Aegis are of square shapes, so a monster
+/// with a range of 4 can attack anything within a 9x9 area.
+/// Client-sided range checks are, however, are always circular.
+/// Enabling this changes all checks to circular checks, which is more realistic,
 /// - but is not the official behaviour.
 //#define CIRCULAR_AREA
-
-/// Uncomment to enable Non Stackable items unique ID
-/// By enabling it, the system will create an unique id for each new non stackable item created
-//#define NSI_UNIQUE_ID
 
 /// Comment to disable Guild/Party Bound item system
 /// By default, we recover/remove Guild/Party Bound items automatically
@@ -66,6 +63,14 @@
 
 /// Uncomment to enable the job base HP/SP table (job_basehpsp_db.txt)
 //#define HP_SP_TABLES
+
+/// Enable separated item by `guid`. [Cydh]
+/// See db/[pre-]re/item_flag.txt and doc/item_group.txt for the `guid` explanation.
+/// NOTE:
+///    If this feature is disabled "in the middle" of your game, the separated is still
+///    separated in inventory, storage, or guild storage until player move the item
+///    to/from storage/inventory to restack them.
+#define ENABLE_ITEM_GUID
 
 /// Uncomment to enable VIP system.
 //#define VIP_ENABLE

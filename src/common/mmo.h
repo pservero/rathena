@@ -60,7 +60,7 @@
 #define ACCOUNT_REG2_NUM 16 ///Max permanent global account variables per account
 #define MAX_REG_NUM 256 ///Should hold the max of GLOBAL/ACCOUNT/ACCOUNT2 (needed for some arrays that hold all three)
 #define DEFAULT_WALK_SPEED 150 ///Default walk speed
-#define MIN_WALK_SPEED 0 ///Min walk speed
+#define MIN_WALK_SPEED 20 ///Min walk speed
 #define MAX_WALK_SPEED 1000 ///Max walk speed
 #define MAX_STORAGE 600 ///Max number of storage slots a player can have, (up to ~850 tested)
 #define MAX_GUILD_STORAGE 600 ///Max number of storage slots a guild
@@ -248,7 +248,7 @@ struct global_reg {
 
 //Holds array of global registries, used by the char server and converter.
 struct accreg {
-	int account_id, char_id;
+	uint32 account_id, char_id;
 	int reg_num;
 	struct global_reg reg[MAX_REG_NUM];
 };
@@ -287,8 +287,8 @@ struct guild_storage {
 };
 
 struct s_pet {
-	int account_id;
-	int char_id;
+	uint32 account_id;
+	uint32 char_id;
 	int pet_id;
 	short class_;
 	short level;
@@ -304,7 +304,7 @@ struct s_pet {
 struct s_homunculus {	//[orn]
 	char name[NAME_LENGTH];
 	int hom_id;
-	int char_id;
+	uint32 char_id;
 	short class_;
 	short prev_class;
 	int hp,max_hp,sp,max_sp;
@@ -328,7 +328,7 @@ struct s_homunculus {	//[orn]
 
 struct s_mercenary {
 	int mercenary_id;
-	int char_id;
+	uint32 char_id;
 	short class_;
 	int hp, sp;
 	unsigned int kill_count;
@@ -337,7 +337,7 @@ struct s_mercenary {
 
 struct s_elemental {
 	int elemental_id;
-	int char_id;
+	uint32 char_id;
 	short class_;
 	int mode;
 	int hp, sp, max_hp, max_sp, matk, atk, atk2;
@@ -346,8 +346,8 @@ struct s_elemental {
 };
 
 struct s_friend {
-	int account_id;
-	int char_id;
+	uint32 account_id;
+	uint32 char_id;
 	char name[NAME_LENGTH];
 };
 
@@ -360,9 +360,9 @@ struct hotkey {
 #endif
 
 struct mmo_charstatus {
-	int char_id;
-	int account_id;
-	int partner_id;
+	uint32 char_id;
+	uint32 account_id;
+	uint32 partner_id;
 	int father;
 	int mother;
 	int child;
@@ -420,6 +420,8 @@ struct mmo_charstatus {
 	unsigned char font;
 
 	bool cashshop_sent; // Whether the player has received the CashShop list
+
+	uint32 uniqueitem_counter;
 };
 
 typedef enum mail_status {
@@ -479,8 +481,8 @@ struct registry {
 };
 
 struct party_member {
-	int account_id;
-	int char_id;
+	uint32 account_id;
+	uint32 char_id;
 	char name[NAME_LENGTH];
 	unsigned short class_;
 	unsigned short map;
@@ -500,7 +502,7 @@ struct party {
 
 struct map_session_data;
 struct guild_member {
-	int account_id, char_id;
+	uint32 account_id, char_id;
 	short hair,hair_color,gender,class_,lv;
 	uint64 exp;
 	int exp_payper;
@@ -526,7 +528,7 @@ struct guild_alliance {
 struct guild_expulsion {
 	char name[NAME_LENGTH];
 	char mes[40];
-	int account_id;
+	uint32 account_id;
 };
 
 struct guild_skill {
@@ -551,8 +553,8 @@ struct guild {
 	struct guild_skill skill[MAX_GUILDSKILL];
 	struct Channel *channel;
 
-	/* TODO: still used for something? */
-	unsigned short save_flag; // for TXT saving
+	/* Used by char-server to save events for guilds */
+	unsigned short save_flag;
 };
 
 struct guild_castle {
@@ -794,7 +796,10 @@ enum bound_type {
 	BOUND_GUILD, /// 2 - Guild Bound
 	BOUND_PARTY, /// 3 - Party Bound
 	BOUND_CHAR, /// 4 - Character Bound
-	BOUND_MAX
+	BOUND_MAX,
+
+	//BOUND_ONEQUIP = 1, //! TODO
+	BOUND_DISPYELLOW = 2, /// Shows the item name in yellow color
 };
 
 // sanity checks...

@@ -79,7 +79,7 @@ struct block_list;
 
 // Damage Calculation
 
-struct Damage battle_calc_attack(int attack_type,struct block_list *bl,struct block_list *target,uint16 skill_id,uint16 skill_lv,int count);
+struct Damage battle_calc_attack(int attack_type,struct block_list *bl,struct block_list *target,uint16 skill_id,uint16 skill_lv,int flag);
 
 int64 battle_calc_return_damage(struct block_list *bl, struct block_list *src, int64 *, int flag, uint16 skill_id, bool status_reflect);
 
@@ -314,6 +314,7 @@ extern struct Battle_Config
 	int item_drop_card_min,item_drop_card_max;
 	int item_drop_equip_min,item_drop_equip_max;
 	int item_drop_mvp_min,item_drop_mvp_max;	// End Addition
+	int item_drop_mvp_mode; //rAthena addition [Playtester]
 	int item_drop_heal_min,item_drop_heal_max;	// Added by Valatris
 	int item_drop_use_min,item_drop_use_max;	//End
 	int item_drop_treasure_min,item_drop_treasure_max; //by [Skotlex]
@@ -431,7 +432,8 @@ extern struct Battle_Config
 	int allow_skill_without_day; // [Komurka]
 	int allow_es_magic_pc; // [Skotlex]
 	int skill_wall_check; // [Skotlex]
-	int cell_stack_limit; // [Skotlex]
+	int official_cell_stack_limit; // [Playtester]
+	int custom_cell_stack_limit; // [Skotlex]
 	int skill_caster_check; // [Skotlex]
 	int sc_castcancel; // [Skotlex]
 	int pc_sc_def_rate; // [Skotlex]
@@ -466,6 +468,7 @@ extern struct Battle_Config
 	int invincible_nodamage;
 	int mob_slave_keep_target;
 	int autospell_check_range;	//Enable range check for autospell bonus. [L0ne_W0lf]
+	int knockback_left;
 	int client_reshuffle_dice;  // Reshuffle /dice
 	int client_sort_storage;
 	int feature_buying_store;
@@ -551,6 +554,7 @@ extern struct Battle_Config
 	// autotrade persistency
 	int feature_autotrade;
 	int feature_autotrade_direction;
+	int feature_autotrade_head_direction;
 	int feature_autotrade_sit;
 	int feature_autotrade_open_delay;
 
@@ -566,6 +570,7 @@ extern struct Battle_Config
 	int fame_pharmacy_10;
 
 	int disp_serverbank_msg;
+	int disp_servervip_msg;
 	int warg_can_falcon;
 	int path_blown_halt;
 	int rental_mount_speed_boost;
@@ -579,6 +584,17 @@ extern struct Battle_Config
 	int revive_onwarp;
 	int mail_delay;
 	int autotrade_monsterignore;
+	int idletime_option;
+	int spawn_direction;
+	int arrow_shower_knockback;
+	int devotion_rdamage_skill_only;
+	int max_extended_aspd;
+	int mob_chase_refresh; //How often a monster should refresh its chase [Playtester]
+	int mob_icewall_walk_block; //How a normal monster should be trapped in icewall [Playtester]
+	int boss_icewall_walk_block; //How a boss monster should be trapped in icewall [Playtester]
+	int snap_dodge; // Enable or disable dodging damage snapping away [csnv]
+	int stormgust_knockback;
+	int default_fixed_castrate;
 } battle_config;
 
 void do_init_battle(void);

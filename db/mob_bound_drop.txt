@@ -1,0 +1,35 @@
+// Monster Item Bound Database
+// [Cydh] house.bad@gmail.com
+// http://pservero.com
+//
+// Structure:
+//     <monster_id>,<item_id:rate>,<flag>
+//
+// 'monster_id'
+//     Monster that will be adjusted here. Look at db/[pre-]re/mob_db.txt for available monster
+//
+// 'item_id'
+//    ID of item that will be dropped, 0 means no additional drops
+//
+// 'rate'
+//    Drop rate, 1 (0.01%) ~ 10000 (100.00%)
+//
+// 'flag'
+//     1 - Makes original drops as bound item (Non-MVP Drop)
+//     2 - Remove all original drops (Non-MVP Drop)
+//
+// NOTE:
+//    - The bound item type is Account Bound
+//    - To make multiple value for drop list, use # as delimiter
+//    - The rates also adjusted by conf/battle/drops.conf settings
+//    - If 'flag' is 0 and no drop list, it will be failed
+//
+
+// Poring also drop bound Red Potion (0.1%) and bound Poring Doll (0.5%)
+1002,0,501:100#741:50
+//
+// Pupa's drop items are item bound
+1008,1,0
+//
+// Poporing only drop bound Green Potion (5%)
+1031,2,506:500

@@ -1,0 +1,6 @@
+// Item Bound Price Database
+// [Cydh] house.bad@gmail.com
+// http://pservero.com
+//
+// Structure:
+//     <item_id>,<price>

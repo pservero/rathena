@@ -23,41 +23,24 @@
 #include "intif.h"
 #include "npc.h"
 #include "pc.h"
-#include "status.h"
-#include "mob.h"
-#include "npc.h" // npc_setcells(), npc_unsetcells()
 #include "chat.h"
-#include "itemdb.h"
 #include "storage.h"
-#include "skill.h"
 #include "trade.h"
 #include "party.h"
-#include "unit.h"
-#include "battle.h"
 #include "battleground.h"
 #include "quest.h"
-#include "script.h"
 #include "mapreg.h"
-#include "guild.h"
 #include "pet.h"
 #include "homunculus.h"
 #include "instance.h"
 #include "mercenary.h"
 #include "elemental.h"
-#include "atcommand.h"
-#include "log.h"
-#include "mail.h"
 #include "cashshop.h"
 #include "channel.h"
-#include "vending.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
 #include <math.h>
 #ifndef _WIN32
-#include <unistd.h>
 #endif
 
 char default_codepage[32] = "";
@@ -70,7 +53,7 @@ char map_server_db[32] = "ragnarok";
 Sql* mmysql_handle;
 
 int db_use_sqldbs = 0;
-char buyingstore_db[32] = "buyingstores";
+char buyingstores_db[32] = "buyingstores";
 char buyingstore_items_db[32] = "buyingstore_items";
 char item_db_db[32] = "item_db";
 char item_db2_db[32] = "item_db2";
@@ -100,8 +83,8 @@ static DBMap* pc_db=NULL; /// int id -> struct map_session_data*
 static DBMap* mobid_db=NULL; /// int id -> struct mob_data*
 static DBMap* bossid_db=NULL; /// int id -> struct mob_data* (MVP db)
 static DBMap* map_db=NULL; /// unsigned int mapindex -> struct map_data*
-static DBMap* nick_db=NULL; /// int char_id -> struct charid2nick* (requested names of offline characters)
-static DBMap* charid_db=NULL; /// int char_id -> struct map_session_data*
+static DBMap* nick_db=NULL; /// uint32 char_id -> struct charid2nick* (requested names of offline characters)
+static DBMap* charid_db=NULL; /// uint32 char_id -> struct map_session_data*
 static DBMap* regen_db=NULL; /// int id -> struct block_list* (status_natural_heal processing)
 static DBMap* map_msg_db=NULL;
 
@@ -124,7 +107,7 @@ int map_port=0;
 
 int autosave_interval = DEFAULT_AUTOSAVE_INTERVAL;
 int minsave_interval = 100;
-int save_settings = 0xFFFF;
+unsigned char save_settings = CHARSAVE_ALL;
 int agit_flag = 0;
 int agit2_flag = 0;
 int night_flag = 0; // 0=day, 1=night [Yor]
@@ -488,8 +471,10 @@ int map_moveblock(struct block_list *bl, int x1, int y1, unsigned int tick)
 
 /*==========================================
  * Counts specified number of objects on given cell.
+ * flag:
+ *		0x1 - only count standing units
  *------------------------------------------*/
-int map_count_oncell(int16 m, int16 x, int16 y, int type)
+int map_count_oncell(int16 m, int16 x, int16 y, int type, int flag)
 {
 	int bx,by;
 	struct block_list *bl;
@@ -503,16 +488,31 @@ int map_count_oncell(int16 m, int16 x, int16 y, int type)
 
 	if (type&~BL_MOB)
 		for( bl = map[m].block[bx+by*map[m].bxs] ; bl != NULL ; bl = bl->next )
-			if(bl->x == x && bl->y == y && bl->type&type)
-				count++;
+			if(bl->x == x && bl->y == y && bl->type&type) {
+				if(flag&1) {
+					struct unit_data *ud = unit_bl2ud(bl);
+					if(!ud || ud->walktimer == INVALID_TIMER)
+						count++;
+				} else {
+					count++;
+				}
+			}
 
 	if (type&BL_MOB)
 		for( bl = map[m].block_mob[bx+by*map[m].bxs] ; bl != NULL ; bl = bl->next )
-			if(bl->x == x && bl->y == y)
-				count++;
+			if(bl->x == x && bl->y == y) {
+				if(flag&1) {
+					struct unit_data *ud = unit_bl2ud(bl);
+					if(!ud || ud->walktimer == INVALID_TIMER)
+						count++;
+				} else {
+					count++;
+				}
+			}
 
 	return count;
 }
+
 /*
  * Looks for a skill unit on a given cell
  * flag&1: runs battle_check_target check based on unit->group->target_flag
@@ -1289,8 +1289,8 @@ int map_clearflooritem_timer(int tid, unsigned int tick, int id, intptr_t data)
 	}
 
 
-	if (search_petDB_index(fitem->item_data.nameid, PET_EGG) >= 0)
-		intif_delete_petdata(MakeDWord(fitem->item_data.card[1], fitem->item_data.card[2]));
+	if (search_petDB_index(fitem->item.nameid, PET_EGG) >= 0)
+		intif_delete_petdata(MakeDWord(fitem->item.card[1], fitem->item.card[2]));
 
 	clif_clearflooritem(fitem, 0);
 	map_deliddb(&fitem->bl);
@@ -1332,7 +1332,7 @@ int map_searchrandfreecell(int16 m,int16 *x,int16 *y,int stack) {
 			if(map_getcell(m,j+*x,i+*y,CELL_CHKNOPASS) && !map_getcell(m,j+*x,i+*y,CELL_CHKICEWALL))
 				continue;
 			//Avoid item stacking to prevent against exploits. [Skotlex]
-			if(stack && map_count_oncell(m,j+*x,i+*y, BL_ITEM) > stack)
+			if(stack && map_count_oncell(m,j+*x,i+*y, BL_ITEM, 0) > stack)
 				continue;
 			free_cells[free_cell][0] = j+*x;
 			free_cells[free_cell++][1] = i+*y;
@@ -1429,6 +1429,85 @@ int map_search_freecell(struct block_list *src, int16 m, int16 *x,int16 *y, int1
 }
 
 /*==========================================
+ * Locates the closest, walkable cell with no blocks of a certain type on it
+ * Returns true on success and sets x and y to cell found.
+ * Otherwise returns false and x and y are not changed.
+ * type: Types of block to count
+ * flag: 
+ *		0x1 - only count standing units
+ *------------------------------------------*/
+bool map_closest_freecell(int16 m, int16 *x, int16 *y, int type, int flag)
+{
+	uint8 dir = 6;
+	int16 tx = *x;
+	int16 ty = *y;
+	int costrange = 10;
+
+	if(!map_count_oncell(m, tx, ty, type, flag))
+		return true; //Current cell is free
+
+	//Algorithm only works up to costrange of 34
+	while(costrange <= 34) {
+		short dx = dirx[dir];
+		short dy = diry[dir];
+
+		//Linear search
+		if(dir%2 == 0 && costrange%MOVE_COST == 0) {
+			tx = *x+dx*(costrange/MOVE_COST);
+			ty = *y+dy*(costrange/MOVE_COST);
+			if(!map_count_oncell(m, tx, ty, type, flag) && map_getcell(m,tx,ty,CELL_CHKPASS)) {
+				*x = tx;
+				*y = ty;
+				return true;
+			}
+		} 
+		//Full diagonal search
+		else if(dir%2 == 1 && costrange%MOVE_DIAGONAL_COST == 0) {
+			tx = *x+dx*(costrange/MOVE_DIAGONAL_COST);
+			ty = *y+dy*(costrange/MOVE_DIAGONAL_COST);
+			if(!map_count_oncell(m, tx, ty, type, flag) && map_getcell(m,tx,ty,CELL_CHKPASS)) {
+				*x = tx;
+				*y = ty;
+				return true;
+			}
+		}
+		//One cell diagonal, rest linear (TODO: Find a better algorithm for this)
+		else if(dir%2 == 1 && costrange%MOVE_COST == 4) {
+			tx = *x+dx*((dir%4==3)?(costrange/MOVE_COST):1);
+			ty = *y+dy*((dir%4==1)?(costrange/MOVE_COST):1);
+			if(!map_count_oncell(m, tx, ty, type, flag) && map_getcell(m,tx,ty,CELL_CHKPASS)) {
+				*x = tx;
+				*y = ty;
+				return true;
+			}
+			tx = *x+dx*((dir%4==1)?(costrange/MOVE_COST):1);
+			ty = *y+dy*((dir%4==3)?(costrange/MOVE_COST):1);
+			if(!map_count_oncell(m, tx, ty, type, flag) && map_getcell(m,tx,ty,CELL_CHKPASS)) {
+				*x = tx;
+				*y = ty;
+				return true;
+			}
+		}
+
+		//Get next direction
+		if (dir == 5) {
+			//Diagonal search complete, repeat with higher cost range
+			if(costrange == 14) costrange += 6;
+			else if(costrange == 28 || costrange >= 38) costrange += 2;
+			else costrange += 4;
+			dir = 6;
+		} else if (dir == 4) {
+			//Linear search complete, switch to diagonal directions
+			dir = 7;
+		} else {
+			dir = (dir+2)%8;
+		}
+	}
+
+	return false;
+}
+
+/*==========================================
  * Add an item in floor to location (m,x,y) and add restriction for those who could pickup later
  * NB : If charids are null their no restriction for pickup
  * @param item_data : item attributes
@@ -1442,14 +1521,14 @@ int map_search_freecell(struct block_list *src, int16 m, int16 *x,int16 *y, int1
  * @param flag: &1 MVP item. &2 do stacking check. &4 bypass droppable check.
  * @return 0:failure, x:item_gid [MIN_FLOORITEM;MAX_FLOORITEM]==[2;START_ACCOUNT_NUM]
  *------------------------------------------*/
-int map_addflooritem(struct item *item_data,int amount,int16 m,int16 x,int16 y,int first_charid,int second_charid,int third_charid,int flags)
+int map_addflooritem(struct item *item,int amount,int16 m,int16 x,int16 y,int first_charid,int second_charid,int third_charid,int flags)
 {
 	int r;
 	struct flooritem_data *fitem=NULL;
 
-	nullpo_ret(item_data);
+	nullpo_ret(item);
 
-	if(!(flags&4) && battle_config.item_onfloor && (itemdb_traderight(item_data->nameid)&1) )
+	if(!(flags&4) && battle_config.item_onfloor && (itemdb_traderight(item->nameid)&1) )
 		return 0; //can't be dropped
 
 	if(!map_searchrandfreecell(m,&x,&y,flags&2?1:0))
@@ -1475,8 +1554,8 @@ int map_addflooritem(struct item *item_data,int amount,int16 m,int16 x,int16 y,i
 	fitem->third_get_charid = third_charid;
 	fitem->third_get_tick = fitem->second_get_tick + (flags&1 ? battle_config.mvp_item_third_get_time : battle_config.item_third_get_time);
 
-	memcpy(&fitem->item_data,item_data,sizeof(*item_data));
-	fitem->item_data.amount=amount;
+	memcpy(&fitem->item,item,sizeof(*item));
+	fitem->item.amount=amount;
 	fitem->subx=(r&3)*3+3;
 	fitem->suby=((r>>2)&3)*3+3;
 	fitem->cleartimer=add_timer(gettick()+battle_config.flooritem_lifetime,map_clearflooritem_timer,fitem->bl.id,0);
@@ -1722,6 +1801,7 @@ int map_quit(struct map_session_data *sd) {
 			status_change_end(&sd->bl, SC_HEAT_BARREL, INVALID_TIMER);
 			status_change_end(&sd->bl, SC_P_ALTER, INVALID_TIMER);
 			status_change_end(&sd->bl, SC_E_CHAIN, INVALID_TIMER);
+			status_change_end(&sd->bl, SC_SIGHTBLASTER, INVALID_TIMER);
 		}
 	}
 
@@ -1767,6 +1847,9 @@ int map_quit(struct map_session_data *sd) {
 
 	if (sd->state.vending)
 		idb_remove(vending_getdb(), sd->status.char_id);
+
+	if (sd->state.buyingstore)
+		idb_remove(buyingstore_getdb(), sd->status.char_id);
 
 	pc_damage_log_clear(sd,0);
 	party_booking_delete(sd); // Party Booking [Spiria]
@@ -2569,41 +2652,53 @@ int map_check_dir(int s_dir,int t_dir)
 uint8 map_calc_dir(struct block_list* src, int16 x, int16 y)
 {
 	uint8 dir = 0;
-	int dx, dy;
 
 	nullpo_ret(src);
 
-	dx = x-src->x;
-	dy = y-src->y;
+	dir = map_calc_dir_xy(src->x, src->y, x, y, unit_getdir(src));
+
+	return dir;
+}
+
+/*==========================================
+ * Returns the direction of the given cell, relative to source cell
+ * Use this if you don't have a block list available to check against
+ *------------------------------------------*/
+uint8 map_calc_dir_xy(int16 srcx, int16 srcy, int16 x, int16 y, uint8 srcdir) {
+	uint8 dir = 0;
+	int dx, dy;
+
+	dx = x-srcx;
+	dy = y-srcy;
 	if( dx == 0 && dy == 0 )
 	{	// both are standing on the same spot
-		//dir = 6; // aegis-style, makes knockback default to the left
-		dir = unit_getdir(src); // athena-style, makes knockback default to behind 'src'
+		// aegis-style, makes knockback default to the left
+		// athena-style, makes knockback default to behind 'src'
+		dir = (battle_config.knockback_left ? 6 : srcdir);
 	}
 	else if( dx >= 0 && dy >=0 )
 	{	// upper-right
-		if( dx*2 <= dy )      dir = 0;	// up
-		else if( dx > dy*2 )  dir = 6;	// right
+		if( dx >= dy*3 )      dir = 6;	// right
+		else if( dx*3 < dy )  dir = 0;	// up
 		else                  dir = 7;	// up-right
 	}
 	else if( dx >= 0 && dy <= 0 )
 	{	// lower-right
-		if( dx*2 <= -dy )     dir = 4;	// down
-		else if( dx > -dy*2 ) dir = 6;	// right
+		if( dx >= -dy*3 )     dir = 6;	// right
+		else if( dx*3 < -dy ) dir = 4;	// down
 		else                  dir = 5;	// down-right
 	}
 	else if( dx <= 0 && dy <= 0 )
 	{	// lower-left
-		if( dx*2 >= dy )      dir = 4;	// down
-		else if( dx < dy*2 )  dir = 2;	// left
+		if( dx*3 >= dy )      dir = 4;	// down
+		else if( dx < dy*3 )  dir = 2;	// left
 		else                  dir = 3;	// down-left
 	}
 	else
 	{	// upper-left
-		if( -dx*2 <= dy )     dir = 0;	// up
-		else if( -dx > dy*2 ) dir = 2;	// left
+		if( -dx*3 <= dy )     dir = 0;	// up
+		else if( -dx > dy*3 ) dir = 2;	// left
 		else                  dir = 1;	// up-left
-
 	}
 	return dir;
 }
@@ -2729,21 +2824,21 @@ int map_getcellp(struct map_data* m,int16 x,int16 y,cell_chk cellchk)
 		// special checks
 		case CELL_CHKPASS:
 #ifdef CELL_NOSTACK
-			if (cell.cell_bl >= battle_config.cell_stack_limit) return 0;
+			if (cell.cell_bl >= battle_config.custom_cell_stack_limit) return 0;
 #endif
 		case CELL_CHKREACH:
 			return (cell.walkable);
 
 		case CELL_CHKNOPASS:
 #ifdef CELL_NOSTACK
-			if (cell.cell_bl >= battle_config.cell_stack_limit) return 1;
+			if (cell.cell_bl >= battle_config.custom_cell_stack_limit) return 1;
 #endif
 		case CELL_CHKNOREACH:
 			return (!cell.walkable);
 
 		case CELL_CHKSTACK:
 #ifdef CELL_NOSTACK
-			return (cell.cell_bl >= battle_config.cell_stack_limit);
+			return (cell.cell_bl >= battle_config.custom_cell_stack_limit);
 #else
 			return 0;
 #endif
@@ -3431,7 +3526,7 @@ int parse_console(const char* buf){
  *------------------------------------------*/
 int map_config_read(char *cfgName)
 {
-	char line[1024], w1[1024], w2[1024];
+	char line[1024], w1[32], w2[1024];
 	FILE *fp;
 
 	fp = fopen(cfgName,"r");
@@ -3449,7 +3544,7 @@ int map_config_read(char *cfgName)
 			continue;
 		if( (ptr = strstr(line, "//")) != NULL )
 			*ptr = '\n'; //Strip comments
-		if( sscanf(line, "%1023[^:]: %1023[^\t\r\n]", w1, w2) < 2 )
+		if( sscanf(line, "%31[^:]: %1023[^\t\r\n]", w1, w2) < 2 )
 			continue;
 
 		//Strip trailing spaces
@@ -3500,7 +3595,7 @@ int map_config_read(char *cfgName)
 			if (minsave_interval < 1)
 				minsave_interval = 1;
 		} else if (strcmpi(w1, "save_settings") == 0)
-			save_settings = atoi(w2);
+			save_settings = cap_value(atoi(w2),CHARSAVE_NONE,CHARSAVE_ALL);
 		else if (strcmpi(w1, "motd_txt") == 0)
 			strcpy(motd_txt, w2);
 		else if (strcmpi(w1, "help_txt") == 0)
@@ -3603,7 +3698,7 @@ int inter_config_read(char *cfgName)
 			continue;
 
 		if( strcmpi( w1, "buyingstore_db" ) == 0 )
-			strcpy( buyingstore_db, w2 );
+			strcpy( buyingstores_db, w2 );
 		else if( strcmpi( w1, "buyingstore_items_db" ) == 0 )
 			strcpy( buyingstore_items_db, w2 );
 		else if(strcmpi(w1,"item_db_db")==0)
@@ -3692,8 +3787,13 @@ int map_sql_init(void)
 	mmysql_handle = Sql_Malloc();
 
 	ShowInfo("Connecting to the Map DB Server....\n");
-	if( SQL_ERROR == Sql_Connect(mmysql_handle, map_server_id, map_server_pw, map_server_ip, map_server_port, map_server_db) )
-		exit(EXIT_FAILURE);
+	if( SQL_ERROR == Sql_Connect(mmysql_handle, map_server_id, map_server_pw, map_server_ip, map_server_port, map_server_db) ){
+            ShowError("Couldn't connect with uname='%s',passwd='%s',host='%s',port='%d',database='%s'\n",
+                        map_server_id, map_server_pw, map_server_ip, map_server_port, map_server_db);
+            Sql_ShowDebug(mmysql_handle);
+            Sql_Free(mmysql_handle);
+            exit(EXIT_FAILURE);
+        }
 	ShowStatus("Connect success! (Map Server Connection)\n");
 
 	if( strlen(default_codepage) > 0 )
@@ -3726,8 +3826,13 @@ int log_sql_init(void)
 	logmysql_handle = Sql_Malloc();
 
 	ShowInfo(""CL_WHITE"[SQL]"CL_RESET": Connecting to the Log Database "CL_WHITE"%s"CL_RESET" At "CL_WHITE"%s"CL_RESET"...\n",log_db_db,log_db_ip);
-	if ( SQL_ERROR == Sql_Connect(logmysql_handle, log_db_id, log_db_pw, log_db_ip, log_db_port, log_db_db) )
+	if ( SQL_ERROR == Sql_Connect(logmysql_handle, log_db_id, log_db_pw, log_db_ip, log_db_port, log_db_db) ){
+		ShowError("Couldn't connect with uname='%s',passwd='%s',host='%s',port='%d',database='%s'\n",
+			log_db_id, log_db_pw, log_db_ip, log_db_port, log_db_db);
+		Sql_ShowDebug(logmysql_handle);
+		Sql_Free(logmysql_handle);
 		exit(EXIT_FAILURE);
+	}
 	ShowStatus(""CL_WHITE"[SQL]"CL_RESET": Successfully '"CL_GREEN"connected"CL_RESET"' to Database '"CL_WHITE"%s"CL_RESET"'.\n", log_db_db);
 
 	if( strlen(default_codepage) > 0 )
@@ -3845,7 +3950,7 @@ void do_final(void)
 	struct s_mapiterator* iter;
 
 	ShowStatus("Terminating...\n");
-	Channel_Config.closing = true;
+	channel_config.closing = true;
 
 	//Ladies and babies first.
 	iter = mapit_getallusers();
@@ -3897,6 +4002,7 @@ void do_final(void)
 	do_final_cashshop();
 	do_final_channel(); //should be called after final guild
 	do_final_vending();
+	do_final_buyingstore();
 
 	map_db->destroy(map_db, map_db_final);
 
@@ -4207,6 +4313,7 @@ int do_init(int argc, char *argv[])
 	do_init_battleground();
 	do_init_duel();
 	do_init_vending();
+	do_init_buyingstore();
 
 	npc_event_do_oninit();	// Init npcs (OnInit)
 

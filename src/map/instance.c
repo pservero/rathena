@@ -4,11 +4,9 @@
 #include "../common/cbasetypes.h"
 #include "../common/socket.h"
 #include "../common/timer.h"
-#include "../common/malloc.h"
 #include "../common/nullpo.h"
 #include "../common/showmsg.h"
 #include "../common/strlib.h"
-#include "../common/utils.h"
 #include "../common/db.h"
 
 #include "clif.h"
@@ -18,11 +16,7 @@
 #include "party.h"
 #include "pc.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <time.h>
 
 #define MAX_INSTANCE_DB		15	// Max number of instance types
 #define INSTANCE_INTERVAL	60000	// Interval used to check when an instance is to be destroyed (ms)
@@ -139,7 +133,7 @@ static int instance_startkeeptimer(struct instance_data *im, short instance_id)
 	nullpo_retr(0, im);
 
 	// No timer
-	if(im->keep_timer != -1)
+	if(im->keep_timer != INVALID_TIMER)
 		return 1;
 
 	if((db = instance_searchtype_db(im->type)) == NULL)
@@ -168,7 +162,7 @@ static int instance_startidletimer(struct instance_data *im, short instance_id)
 	nullpo_retr(1, im);
 
 	// No current timer
-	if(im->idle_timer != -1)
+	if(im->idle_timer != INVALID_TIMER)
 		return 1;
 
 	// Add the timer
@@ -195,13 +189,13 @@ static int instance_stopidletimer(struct instance_data *im)
 	nullpo_retr(0, im);
 	
 	// No timer
-	if(im->idle_timer == -1)
+	if(im->idle_timer == INVALID_TIMER)
 		return 1;
 
 	// Delete the timer - Party has returned or instance is destroyed
 	im->idle_limit = 0;
 	delete_timer(im->idle_timer, instance_delete_timer);
-	im->idle_timer = -1;
+	im->idle_timer = INVALID_TIMER;
 
 	// Notify the party
 	if( ( p = party_search( im->party_id ) ) != NULL )
@@ -284,9 +278,9 @@ int instance_create(int party_id, const char *name)
 	instance_data[i].state = INSTANCE_IDLE;
 	instance_data[i].party_id = p->party.party_id;
 	instance_data[i].keep_limit = 0;
-	instance_data[i].keep_timer = -1;
+	instance_data[i].keep_timer = INVALID_TIMER;
 	instance_data[i].idle_limit = 0;
-	instance_data[i].idle_timer = -1;
+	instance_data[i].idle_timer = INVALID_TIMER;
 	instance_data[i].vars = idb_alloc(DB_OPT_RELEASE_DATA);
 	memset(instance_data[i].map, 0, sizeof(instance_data[i].map));
 
@@ -450,13 +444,13 @@ int instance_destroy(short instance_id)
 			map_delinstancemap(im->map[i].m);
 	}
 
-	if(im->keep_timer != -1) {
+	if(im->keep_timer != INVALID_TIMER) {
 		delete_timer(im->keep_timer, instance_delete_timer);
-		im->keep_timer = -1;
+		im->keep_timer = INVALID_TIMER;
 	}
-	if(im->idle_timer != -1) {
+	if(im->idle_timer != INVALID_TIMER) {
 		delete_timer(im->idle_timer, instance_delete_timer);
-		im->idle_timer = -1;
+		im->idle_timer = INVALID_TIMER;
 	}
 
 	if((p = party_search(im->party_id))) {

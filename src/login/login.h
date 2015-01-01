@@ -28,7 +28,7 @@ enum E_LOGINSERVER_ST {
 
 ///Struct of 1 client connected to login-serv
 struct login_session_data {
-	int account_id;			///also GID
+	uint32 account_id;			///also GID
 	long login_id1;
 	long login_id2;
 	char sex;			/// 'F','M','S'
@@ -86,28 +86,27 @@ struct Login_Config {
 	uint32 client_version_to_connect;               /// the client version needed to connect (if checking is enabled)
 
 	bool ipban;                                     /// perform IP blocking (via contents of `ipbanlist`) ?
-	bool dynamic_pass_failure_ban;                  /// automatic IP blocking due to failed login attemps ?
-	unsigned int dynamic_pass_failure_ban_interval; /// how far to scan the loginlog for password failures
+	bool dynamic_pass_failure_ban;                  /// automatic IP blocking due to failed login attempts ?
+	unsigned int dynamic_pass_failure_ban_interval; /// how far to scan the loginlog for password failures in minutes
 	unsigned int dynamic_pass_failure_ban_limit;    /// number of failures needed to trigger the ipban
-	unsigned int dynamic_pass_failure_ban_duration; /// duration of the ipban
+	unsigned int dynamic_pass_failure_ban_duration; /// duration of the ipban in minutes
 	bool use_dnsbl;                                 /// dns blacklist blocking ?
 	char dnsbl_servs[1024];                         /// comma-separated list of dnsbl servers
 
-	char account_engine[256];				// name of the engine to use (defaults to auto, for the first available engine)
-	int allowed_regs;					//max number of registration
-	int time_allowed;					//registration intervall in seconds
+	int allowed_regs;								/// max number of registration
+	int time_allowed;								/// registration interval in seconds
 
-	int client_hash_check;					// flags for checking client md5
-	struct client_hash_node *client_hash_nodes;		// linked list containg md5 hash for each gm group
-	char loginconf_name[256];				//name of main config file
-	char msgconf_name[256];					//name of msg_conf config file
-	char lanconf_name[256];					//name of lan config file
-	
-	int char_per_account;                           /// number of characters an account can have
+	int client_hash_check;							/// flags for checking client md5
+	struct client_hash_node *client_hash_nodes;		/// linked list containing md5 hash for each gm group
+	char loginconf_name[256];						/// name of main config file
+	char msgconf_name[256];							/// name of msg_conf config file
+	char lanconf_name[256];							/// name of lan config file
+
+	int char_per_account;							/// number of characters an account can have
 #ifdef VIP_ENABLE
 	struct {
-		unsigned int group;                     /// Vip groupid
-		unsigned int char_increase;             /// number of char-slot to increase in vip state
+		unsigned int group;							/// VIP group ID
+		unsigned int char_increase;					/// number of char-slot to increase in VIP state
 	} vip_sys;
 #endif
 };
@@ -122,19 +121,20 @@ extern struct Login_Config login_config;
 int login_msg_config_read(char *cfgName);
 const char* login_msg_txt(int msg_number);
 void login_do_final_msg(void);
+bool login_config_read(const char* cfgName, bool normal);
 
 /// Online User Database [Wizputer]
 struct online_login_data {
-	int account_id;
+	uint32 account_id;
 	int waiting_disconnect;
 	int char_server;
 };
-extern DBMap* online_db; // int account_id -> struct online_login_data*
+extern DBMap* online_db; // uint32 account_id -> struct online_login_data*
 
 /// Auth database
 #define AUTH_TIMEOUT 30000
 struct auth_node {
-	int account_id;
+	uint32 account_id;
 	uint32 login_id1;
 	uint32 login_id2;
 	uint32 ip;
@@ -142,7 +142,7 @@ struct auth_node {
 	uint32 version;
 	uint8 clienttype;
 };
-extern DBMap* auth_db; // int account_id -> struct auth_node*
+extern DBMap* auth_db; // uint32 account_id -> struct auth_node*
 
 ///Accessors
 AccountDB* login_get_accounts_db(void);
@@ -164,14 +164,14 @@ DBData login_create_online_user(DBKey key, va_list args);
  * @param account_id: the account identifier
  * @return the new|registered online data
  */
-struct online_login_data* login_add_online_user(int char_server, int account_id);
+struct online_login_data* login_add_online_user(int char_server, uint32 account_id);
 
 /**
  * Function to remove a user from online_db.
  *  Checking if user was already scheduled for deletion, and remove that timer if found.
  * @param account_id: the account identifier
  */
-void login_remove_online_user(int account_id);
+void login_remove_online_user(uint32 account_id);
 
 /**
  * Timered function to disconnect a user from login.

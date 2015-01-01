@@ -1,0 +1,29 @@
+// Item Bound Price Database
+// [Cydh] house.bad@gmail.com
+// http://pservero.com
+//
+// Structure:
+//     <item_id>,<buy_price>{,<sell_price>}
+//
+// 'item_id'
+//     ID of item. See db/[pre-]re/item_db.txt for available items.
+//
+// 'buy_price'
+//     By default, price for Bound Zeny will be same with original price.
+//     If price >= 0, it will use fixed value.
+//     If price < 0, means n% from original price.
+//     This price only affected if item is Bound Item, doesn't change normal price for normal item.
+//
+// 'sell_price'
+//     If price > 0, it will use fixed value.
+//     If price <= 0, means buy_price/2.
+//
+//
+
+// 1. Red Potion price if not set is 50, it's from => 501,Red_Potion,Red Potion,0,50....
+//
+// 2. Red Potion price for Bound Zeny will be half of it.
+501,-20
+//
+// 3. Poring Doll price is 1,000 Bound Zeny
+741,1000

@@ -46,6 +46,7 @@ enum e_packet_ack {
 	ZC_PERSONAL_INFOMATION,
 	ZC_PERSONAL_INFOMATION_CHN,
 	ZC_CLEAR_DIALOG,
+	ZC_C_MARKERINFO,
 	//add other here
 	MAX_ACK_FUNC //auto upd len
 };
@@ -380,7 +381,6 @@ enum clif_messages {
 	NEED_REINS_OF_MOUNT = 0x78c,
 };
 
-
 enum e_personalinfo {
 	PINFO_BASIC = 0,
 	PINFO_PREMIUM,
@@ -541,9 +541,8 @@ void clif_cooking_list(struct map_session_data *sd, int trigger, uint16 skill_id
 
 void clif_produceeffect(struct map_session_data* sd,int flag, unsigned short nameid);
 
-void clif_skill_setunit(struct skill_unit *unit);
+void clif_getareachar_skillunit(struct block_list *bl, struct skill_unit *unit, enum send_target target);
 void clif_skill_delunit(struct skill_unit *unit);
-
 void clif_skillunit_update(struct block_list* bl);
 
 void clif_autospell(struct map_session_data *sd,uint16 skill_lv);
@@ -609,8 +608,8 @@ void clif_party_info(struct party_data* p, struct map_session_data *sd);
 void clif_party_invite(struct map_session_data *sd,struct map_session_data *tsd);
 void clif_party_inviteack(struct map_session_data* sd, const char* nick, int result);
 void clif_party_option(struct party_data *p,struct map_session_data *sd,int flag);
-void clif_party_withdraw(struct party_data* p, struct map_session_data* sd, int account_id, const char* name, int flag);
-void clif_party_message(struct party_data* p, int account_id, const char* mes, int len);
+void clif_party_withdraw(struct party_data* p, struct map_session_data* sd, uint32 account_id, const char* name, int flag);
+void clif_party_message(struct party_data* p, uint32 account_id, const char* mes, int len);
 void clif_party_xy(struct map_session_data *sd);
 void clif_party_xy_single(int fd, struct map_session_data *sd);
 void clif_party_hp(struct map_session_data *sd);
@@ -629,14 +628,14 @@ void clif_guild_memberlogin_notice(struct guild *g,int idx,int flag);
 void clif_guild_invite(struct map_session_data *sd,struct guild *g);
 void clif_guild_inviteack(struct map_session_data *sd,int flag);
 void clif_guild_leave(struct map_session_data *sd,const char *name,const char *mes);
-void clif_guild_expulsion(struct map_session_data* sd, const char* name, const char* mes, int account_id);
+void clif_guild_expulsion(struct map_session_data* sd, const char* name, const char* mes, uint32 account_id);
 void clif_guild_positionchanged(struct guild *g,int idx);
 void clif_guild_memberpositionchanged(struct guild *g,int idx);
 void clif_guild_emblem(struct map_session_data *sd,struct guild *g);
 void clif_guild_emblem_area(struct block_list* bl);
 void clif_guild_notice(struct map_session_data* sd, struct guild* g);
-void clif_guild_message(struct guild *g,int account_id,const char *mes,int len);
-void clif_guild_reqalliance(struct map_session_data *sd,int account_id,const char *name);
+void clif_guild_message(struct guild *g,uint32 account_id,const char *mes,int len);
+void clif_guild_reqalliance(struct map_session_data *sd,uint32 account_id,const char *name);
 void clif_guild_allianceack(struct map_session_data *sd,int flag);
 void clif_guild_delalliance(struct map_session_data *sd,int guild_id,int flag);
 void clif_guild_oppositionack(struct map_session_data *sd,int flag);
@@ -700,6 +699,7 @@ void clif_weather(int16 m); // [Valaris]
 void clif_specialeffect(struct block_list* bl, int type, enum send_target target); // special effects [Valaris]
 void clif_specialeffect_single(struct block_list* bl, int type, int fd);
 void clif_messagecolor(struct block_list* bl, unsigned long color, const char* msg); // Mob/Npc color talk [SnakeDrak]
+void clif_messagecolor2(struct map_session_data *sd, unsigned long color, const char* msg);		// Use for dispcolor [Napster]
 void clif_specialeffect_value(struct block_list* bl, int effect_id, int num, send_target target);
 
 void clif_GM_kickack(struct map_session_data *sd, int id);
@@ -844,7 +844,7 @@ void clif_msgtable_num(int fd, int line, int num);
 
 int clif_elementalconverter_list(struct map_session_data *sd);
 
-void clif_millenniumshield(struct map_session_data *sd, short shields );
+void clif_millenniumshield(struct block_list *bl, short shields);
 
 int clif_spellbook_list(struct map_session_data *sd);
 
@@ -882,7 +882,12 @@ void clif_channel_msg(struct Channel *channel, struct map_session_data *sd, char
 void clif_ranklist(struct map_session_data *sd, int16 rankingType);
 void clif_update_rankingpoint(struct map_session_data *sd, int rankingtype, int point);
 
-void clif_crimson_marker(int fd, struct block_list *bl, bool remove);
+void clif_crimson_marker(struct map_session_data *sd, struct block_list *bl, bool remove);
+
+void clif_showscript(struct block_list* bl, const char* message);
+void clif_party_leaderchanged(struct map_session_data *sd, int prev_leader_aid, int new_leader_aid);
+
+void clif_account_name(int fd, uint32 account_id, const char* accname);
 
 //void clif_broadcast_obtain_special_item(); ///TODO!
 

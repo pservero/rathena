@@ -1,0 +1,20 @@
+prontera,155,165,5	script	Waitingroom	123,{
+	end;
+	OnInit:
+		waitingroom "My Chat Room",20;
+		end;
+}
+
+prontera,158,165,5	script	WaitingroomInfo	123,{
+	.@room$ = "Waitingroom";
+	.@join = getwaitingroomstate(99,.@room$);
+	if (!.@join)
+		mes "No player joined in "+.@room$+" room yet.";
+	else {
+		mes "Joined player in "+.@room$+": "+.@join+"";
+		for (.@i = 0; .@i < .@join; .@i++) {
+			mes ""+(.@i+1)+". "+.@waitingroomuser_name$[.@i]+" ("+.@waitingroomuser_cid[.@i]+"/"+.@waitingroomuser_aid[.@i]+")";
+		}
+	}
+	close;
+}

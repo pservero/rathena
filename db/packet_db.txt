@@ -463,6 +463,7 @@ packet_ver: 5
 //0x020b,-1
 //0x020c,-1
 0x020d,-1
+0x8b3,-1
 0x8d6,6,ZC_CLEAR_DIALOG,2
 
 //2004-07-05aSakexe
@@ -1467,7 +1468,7 @@ packet_ver: 25
 0x07fb,25
 
 //2009-12-01aRagexeRE
-//0x07fc,10
+0x07fc,10
 //0x07fd,-1
 0x07fe,26
 //0x07ff,-1
@@ -1785,7 +1786,7 @@ packet_ver: 31
 
 //2012-06-18
 packet_ver: 32
-0x0983,29
+0x0983,29 // ZC_MSG_STATE_CHANGE3
 0x0861,41,bookingregreq,2:4:6 //actually 12-05-03
 
 //2012-07-02aRagexeRE (unstable)
@@ -1815,7 +1816,7 @@ packet_ver: 34
 0x0363,6,ticksend,2
 0x0365,12,searchstoreinfolistitemclick,2:6:10
 0x0438,6,dropitem,2:4
-0x0447,2,booking_playcancel,0
+0x0447,2,booking_playcancel,0 // CZ_BLOCKING_PLAY_CANCEL
 0x044A,6,clientversion,2
 0x0844,2,cashshopopen,0
 0x0849,16 //clif_cashshop_result
@@ -1867,10 +1868,15 @@ packet_ver: 34
 0x0995,-1 //store itemlist normal
 0x0996,-1 //store itemlist equip
 0x0997,-1 //ZC_EQUIPWIN_MICROSCOPE_V5
-0x0998,8,equipitem,2:4
+0x0998,8,equipitem,2:4 // CZ_REQ_WEAR_EQUIP_V5
 0x0999,11 // cz_wear_equipv5
 0x099a,9 // take_off_equipv5
 0x099b,8 //maptypeproperty2
+
+// New Packets
+0x08ff,24 // ZC_EFST_SET_ENTER
+0x0984,28 // ZC_EFST_SET_ENTER2
+0x099f,22 // ZC_SKILL_ENTRY4
 
 //2013-05-15aRagexe (Yommy)
 packet_ver: 35
@@ -2205,6 +2211,9 @@ packet_ver: 44
 0x09B8,6,bankclose,2
 0x09B9,4,ZC_ACK_CLOSE_BANKING,2
 
+//2013-07-31cRagexe
+0x09ca,23 //ZC_SKILL_ENTRY5
+
 //2013-08-07Ragexe
 packet_ver: 45
 0x0369,7,actionrequest,2:6
@@ -2236,6 +2245,7 @@ packet_ver: 45
 0x023B,26,friendslistadd,2
 0x0361,5,hommenu,2:4
 0x0887,36,storagepassword,2:4:20
+0x09C1,10,ZC_C_MARKERINFO,2:6:8
 
 //2013-12-23Ragexe
 packet_ver: 46
@@ -2269,13 +2279,14 @@ packet_ver: 46
 0x0361,5,hommenu,2:4
 0x08A4,36,storagepassword,2:4:20
 //New Packets
-0x09D4,2,dull,0 //npcshopclosed
+//0x097E,12 //ZC_UPDATE_RANKING_POINT
+0x09B4,6,dull,0 //Cash Shop - Special Tab
 0x09CE,102,itemmonster,2
+0x09D4,2,dull,0 //npcshopclosed
 //NPC Market
-0x09D8,2,dull,0 //npcmarketclosed
 0x09D6,-1,dull,0 //npcmarketpurchase
+0x09D8,2,dull,0 //npcmarketclosed
 0x09DF,7
-0x09B4,6,dull,0 // Cash Shop - Special Tab
 
 //Add new packets here
 //packet_ver: 47

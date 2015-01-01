@@ -368,7 +368,7 @@ return 0 if the there is no player attached or the attached player no longer
 is logged on to the map-server).
 
 But what about GID?
---- ---- ----- ----
+-------------------
 
 GID stands for the Game ID of something, this can either be the GID obtained
 through mobspawn (mob control commands) or the account ID of a character.
@@ -643,7 +643,7 @@ the '$', normally denoting a string variable, before the square brackets that
 denotes an array index.
 
 Resume of the allowed variable and array scopes
------- -- --- ------- -------- --- ----- ------
+-----------------------------------------------
 
 +==========+======+=======+
 |VarType   | Norm | Array |
@@ -1201,7 +1201,7 @@ does not use 'mes'.
         npctalk "Look at that you are almost 2nd profession";
         end;
 
-Without the use if 'end' it would travel through the labels until the end of the 
+Without the use of 'end' it would travel through the labels until the end of the 
 script. If you were lvl 10 or less, you would see all the speech lines, the use 
 of 'end' stops this, and ends the script.
 
@@ -2545,7 +2545,15 @@ armor, but also don't want them to equip if after the check, you would do this:
 
 ---------------------------------------
 
-*getequipname(<equpment slot>)
+*getequipuniqueid(<equipment slot>)
+
+This function returns the unique ID (as a string) of the item equipped in the equipment slot 
+specified on the invoking character. If nothing is equipped there, it returns an empty string.
+See 'getequipid' for a full list of valid equipment slots.
+
+---------------------------------------
+
+*getequipname(<equipment slot>)
 
 Returns the jname of the item equipped in the specified equipment slot on the
 invoking character, or an empty string if nothing is equipped in that position.
@@ -2839,6 +2847,17 @@ This function returns CARD ID, 255,254,-255 (for card 0, if the item is produced
 It's useful for when you want to check whether an item contains cards or if it's signed.
 
 ---------------------------------------
+
+*mergeitem({<item_id>});
+*mergeitem({"<item name>"});
+
+Merge all stackable items that separated by GUID flags
+(either by flag 4 item_flag.txt or GUID  in item_group).
+If no item ID/name given, all possible items in player's inventory will be merged.
+
+Example, just see the NPC 'npc/re/other/merge_item.txt'.
+
+---------------------------------------
 //
 2,1.- End of item-related commands.
 //
@@ -2992,16 +3011,6 @@ within the specified area - an x1/y1-x2/y2 square on the specified map.
 
 This is useful for maps that are split into many buildings, such as all the 
 "*_in" maps, due to all the shops and houses.
-
----------------------------------------
-
-*getusersname;
-
-This command will give the invoking character a list of names of the connected 
-characters (including themselves) into an NPC script message window (see 'mes') 
-paging it by 10 names as if with the 'next' command.
-
-You need to put a 'close' after that yourself.
 
 ---------------------------------------
 \\
@@ -3574,24 +3583,36 @@ warg and 0 if they don't.
 ---------------------------------------
 
 *checkvending({"<Player Name>"})
-*checkchatting({"<Player Name>"})
 
-Checks if the player is vending or in a chatroom.
+Checks if the player is vending or has has a buyingstore. Additionally
+it gives you the information whether the player uses autotrade or not.
 Name is optional, and defaults to the attached player if omitted.
 
-Return values for 'checkvending' are
-  0 = not vending
+The returned value is bitmask of.
+  0 = doesn't have a vending or buyingstore (which also means he can't use autotrade)
   1 = normal vending
-  2 = vending using @autotrade
-
-'checkchatting' returns 1 if they are in a chat room, 0 if they are not.
+  2 = using @autotrade
+  4 = has a buyingstore
 
 Examples:
-	//This will check if Aaron is vending, and if so, put a message in front
-	//of the attached player saying Aaron is vending.
-	if (checkvending("Aaron"))
+	//This will check Aaron's state
+	.@state = checkvending("Aaron");
+	if (.@state&1)
 		mes "Aaron is currently vending!";
+	if (.@state&4)
+		mes "Aaron has a buying store!";
+	if (.@state&2)
+		mes "Aaron is autotrading!";
 
+---------------------------------------
+
+*checkchatting({"<Player Name>"})
+
+Checks if the player is in a chatroom.
+Name is optional, and defaults to the attached player if omitted.
+Returns 1 if they are in a chat room, 0 if they are not.
+
+Examples:
 	//This will check if the attached player in a chat room or not.
 	if (checkchatting())
 		mes "You are currently in a chat room!";
@@ -3759,10 +3780,11 @@ be seen by anyone else.
 
 ---------------------------------------
 
-*dispbottom "<message>";
+*dispbottom "<message>"{,<color>};
 
-This command will send the given message into the invoking character's chat 
-window.
+This command will send the given message with color into the invoking character's chat 
+window. The color format is in RGB (0xRRGGBB). The color is
+by default green
 
 ---------------------------------------
 
@@ -7149,7 +7171,7 @@ Example:
 *query_logsql("your MySQL query"{, <array variable>{, <array variable>{, ...}}});
 
 Executes an SQL query. A 'select' query can fill array variables with up to 128 rows of values,
-and will return the number of rows (i.e. array size).
+and will return the number of rows (i.e. array size) or -1 on failure/empty array.
 
 Note that 'query_sql' runs on the main database while 'query_logsql' runs on the log database.
 

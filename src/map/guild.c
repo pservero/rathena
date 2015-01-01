@@ -17,22 +17,15 @@
 #include "battle.h"
 #include "npc.h"
 #include "pc.h"
-#include "status.h"
-#include "mob.h"
 #include "intif.h"
-#include "clif.h"
 #include "channel.h"
-#include "skill.h"
-#include "log.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 static DBMap* guild_db; // int guild_id -> struct guild*
 static DBMap* castle_db; // int castle_id -> struct guild_castle*
-static DBMap* guild_expcache_db; // int char_id -> struct guild_expcache*
+static DBMap* guild_expcache_db; // uint32 char_id -> struct guild_expcache*
 static DBMap* guild_infoevent_db; // int guild_id -> struct eventlist*
 
 struct eventlist {
@@ -73,7 +66,7 @@ unsigned short guild_flags_count;
 /*==========================================
  * Retrieves and validates the sd pointer for this guild member [Skotlex]
  *------------------------------------------*/
-static TBL_PC* guild_sd_check(int guild_id, int account_id, int char_id) {
+static TBL_PC* guild_sd_check(int guild_id, uint32 account_id, uint32 char_id) {
 	TBL_PC* sd = map_id2sd(account_id);
 
 	if (!(sd && sd->status.char_id == char_id))
@@ -225,7 +218,7 @@ struct map_session_data* guild_getavailablesd(struct guild* g) {
 }
 
 /// lookup: player AID/CID -> member index
-int guild_getindex(struct guild *g,int account_id,int char_id) {
+int guild_getindex(struct guild *g,uint32 account_id,uint32 char_id) {
 	int i;
 
 	if( g == NULL )
@@ -371,7 +364,7 @@ int guild_create(struct map_session_data *sd, const char *name) {
 }
 
 //Whether or not to create guild
-int guild_created(int account_id,int guild_id) {
+int guild_created(uint32 account_id,int guild_id) {
 	struct map_session_data *sd=map_id2sd(account_id);
 
 	if(sd==NULL)
@@ -511,7 +504,7 @@ int guild_recv_info(struct guild *sg) {
 		if( sd==NULL )
 			continue;
 		sd->guild = g;
-		if(Channel_Config.ally_autojoin ) {
+		if(channel_config.ally_autojoin ) {
 			channel_gjoin(sd,3); //make all member join guildchan+allieschan
 		}
 
@@ -676,7 +669,7 @@ void guild_member_joined(struct map_session_data *sd) {
 		g->member[i].sd = sd;
 		sd->guild = g;
 
-		if( Channel_Config.ally_enable && Channel_Config.ally_autojoin ) {
+		if( channel_config.ally_enable && channel_config.ally_autojoin ) {
 			channel_gjoin(sd,3);
 		}
 	}
@@ -685,7 +678,7 @@ void guild_member_joined(struct map_session_data *sd) {
 /*==========================================
  * Add a player to a given guild_id
  *----------------------------------------*/
-int guild_member_added(int guild_id,int account_id,int char_id,int flag) {
+int guild_member_added(int guild_id,uint32 account_id,uint32 char_id,int flag) {
 	struct map_session_data *sd= map_id2sd(account_id),*sd2;
 	struct guild *g;
 
@@ -732,7 +725,7 @@ int guild_member_added(int guild_id,int account_id,int char_id,int flag) {
 /*==========================================
  * Player request leaving a given guild_id
  *----------------------------------------*/
-int guild_leave(struct map_session_data* sd, int guild_id, int account_id, int char_id, const char* mes) {
+int guild_leave(struct map_session_data* sd, int guild_id, uint32 account_id, uint32 char_id, const char* mes) {
 	struct guild *g;
 
 	nullpo_ret(sd);
@@ -754,7 +747,7 @@ int guild_leave(struct map_session_data* sd, int guild_id, int account_id, int c
 /*==========================================
  * Request remove a player to a given guild_id
  *----------------------------------------*/
-int guild_expulsion(struct map_session_data* sd, int guild_id, int account_id, int char_id, const char* mes) {
+int guild_expulsion(struct map_session_data* sd, int guild_id, uint32 account_id, uint32 char_id, const char* mes) {
 	struct map_session_data *tsd;
 	struct guild *g;
 	int i,ps;
@@ -786,7 +779,7 @@ int guild_expulsion(struct map_session_data* sd, int guild_id, int account_id, i
 	return 0;
 }
 
-int guild_member_withdraw(int guild_id, int account_id, int char_id, int flag, const char* name, const char* mes) {
+int guild_member_withdraw(int guild_id, uint32 account_id, uint32 char_id, int flag, const char* name, const char* mes) {
 	int i;
 	struct guild* g = guild_search(guild_id);
 	struct map_session_data* sd = map_charid2sd(char_id);
@@ -840,12 +833,12 @@ int guild_member_withdraw(int guild_id, int account_id, int char_id, int flag, c
 }
 
 #ifdef BOUND_ITEMS
-void guild_retrieveitembound(int char_id,int aid,int guild_id) {
+void guild_retrieveitembound(uint32 char_id,int aid,int guild_id) {
 	TBL_PC *sd = map_id2sd(aid);
 	if(sd){ //Character is online
 		int idxlist[MAX_INVENTORY];
 		int j;
-		j = pc_bound_chk(sd,2,idxlist);
+		j = pc_bound_chk(sd,BOUND_GUILD,idxlist);
 		if(j) {
 			struct guild_storage* stor = guild2storage(sd->status.guild_id);
 			int i;
@@ -903,7 +896,7 @@ int guild_send_memberinfoshort(struct map_session_data *sd,int online) { // clea
 	return 0;
 }
 
-int guild_recv_memberinfoshort(int guild_id,int account_id,int char_id,int online,int lv,int class_) { // cleaned up [LuzZza]
+int guild_recv_memberinfoshort(int guild_id,uint32 account_id,uint32 char_id,int online,int lv,int class_) { // cleaned up [LuzZza]
 
 	int i,alv,c,idx=-1,om=0,oldonline=-1;
 	struct guild *g = guild_search(guild_id);
@@ -985,7 +978,7 @@ int guild_send_message(struct map_session_data *sd,const char *mes,int len) {
 /*====================================================
  * Guild receive a message, will be displayed to whole member
  *---------------------------------------------------*/
-int guild_recv_message(int guild_id,int account_id,const char *mes,int len) {
+int guild_recv_message(int guild_id,uint32 account_id,const char *mes,int len) {
 	struct guild *g;
 	if( (g=guild_search(guild_id))==NULL)
 		return 0;
@@ -996,7 +989,7 @@ int guild_recv_message(int guild_id,int account_id,const char *mes,int len) {
 /*====================================================
  * Member changing position in guild
  *---------------------------------------------------*/
-int guild_change_memberposition(int guild_id,int account_id,int char_id,short idx) {
+int guild_change_memberposition(int guild_id,uint32 account_id,uint32 char_id,short idx) {
 	return intif_guild_change_memberinfo(guild_id,account_id,char_id,GMI_POSITION,&idx,sizeof(idx));
 }
 
@@ -1250,7 +1243,7 @@ int guild_skillup(TBL_PC* sd, uint16 skill_id) {
 /*====================================================
  * Notification of guildskill skill_id increase request
  *---------------------------------------------------*/
-int guild_skillupack(int guild_id,uint16 skill_id,int account_id) {
+int guild_skillupack(int guild_id,uint16 skill_id,uint32 account_id) {
 	struct map_session_data *sd=map_id2sd(account_id);
 	struct guild *g=guild_search(guild_id);
 	int i;
@@ -1404,7 +1397,7 @@ int guild_reqalliance(struct map_session_data *sd,struct map_session_data *tsd) 
 /*====================================================
  * Player sd, answer to player tsd (account_id) for an alliance request
  *---------------------------------------------------*/
-int guild_reply_reqalliance(struct map_session_data *sd,int account_id,int flag) {
+int guild_reply_reqalliance(struct map_session_data *sd,uint32 account_id,int flag) {
 	struct map_session_data *tsd;
 
 	nullpo_ret(sd);
@@ -1521,7 +1514,7 @@ int guild_opposition(struct map_session_data *sd,struct map_session_data *tsd) {
 /*====================================================
  * Notification of a relationship between 2 guilds
  *---------------------------------------------------*/
-int guild_allianceack(int guild_id1,int guild_id2,int account_id1,int account_id2,int flag,const char *name1,const char *name2)
+int guild_allianceack(int guild_id1,int guild_id2,uint32 account_id1,uint32 account_id2,int flag,const char *name1,const char *name2)
 {
 	struct guild *g[2];
 	int guild_id[2];
@@ -1673,7 +1666,7 @@ int guild_broken(int guild_id,int flag) {
 	guild_db->foreach(guild_db,guild_broken_sub,guild_id);
 	castle_db->foreach(castle_db,castle_guild_broken_sub,guild_id);
 	guild_storage_delete(guild_id);
-	if( Channel_Config.ally_enable ) {
+	if( channel_config.ally_enable ) {
 		channel_delete(g->channel);
 	}
 	idb_remove(guild_db,guild_id);
@@ -1701,7 +1694,7 @@ int guild_gm_change(int guild_id, struct map_session_data *sd) {
 }
 
 //Notification from Char server that a guild's master has changed. [Skotlex]
-int guild_gm_changed(int guild_id, int account_id, int char_id) {
+int guild_gm_changed(int guild_id, uint32 account_id, uint32 char_id) {
 	struct guild *g;
 	struct guild_member gm;
 	int pos, i;
@@ -1805,7 +1798,7 @@ int guild_break(struct map_session_data *sd,char *name) {
 
 #ifdef BOUND_ITEMS
 	//Guild bound item check - Removes the bound flag
-	j = pc_bound_chk(sd,2,idxlist);
+	j = pc_bound_chk(sd,BOUND_GUILD,idxlist);
 	for(i=0;i<j;i++)
 		sd->status.inventory[idxlist[i]].bound = BOUND_NONE;
 #endif
