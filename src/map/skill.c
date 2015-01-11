@@ -20526,10 +20526,11 @@ static bool skill_parse_row_nocanlogtick(char* split[], int columns, int current
 	return true;
 }
 
-/**
- * Manage Skill Damage database [Lilith]
- */
 #ifdef ADJUST_SKILL_DAMAGE
+/**
+ * Reads skill damage adjustment
+ * @author [Lilith]
+ */
 static bool skill_parse_row_skilldamage(char* split[], int columns, int current)
 {
 	uint16 skill_id = skill_name2id(split[0]), idx;

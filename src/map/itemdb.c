@@ -919,6 +919,7 @@ static bool itemdb_read_flag(char* fields[], int columns, int current) {
 #ifdef ENABLE_ITEM_GUID
 	if (flag&4 && itemdb_isstackable2(id)) id->flag.guid = set ? 1 : 0;
 #endif
+	if (flag&8) id->flag.bindOnEquip = true;
 
 	return true;
 }
@@ -1604,7 +1605,7 @@ void itemdb_reload(void) {
 	//- Fixes the need of a @reloadmobdb after a @reloaditemdb to re-link monster drop data
 	for( i = 0; i < MAX_MOB_DB; i++ ) {
 		struct mob_db *entry;
-		if( !((i < 1324 || i > 1363) && (i < 1938 || i > 1946)) )
+		if( !((i < MOBID_TREAS01 || i > MOBID_TREAS40) && (i < MOBID_TREAS41 || i > MOBID_TREAS49)) )
 			continue;
 		entry = mob_db(i);
 		for(d = 0; d < MAX_MOB_DROP; d++) {
