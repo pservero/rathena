@@ -1473,6 +1473,7 @@ int64 battle_calc_gvg_damage(struct block_list *src,struct block_list *bl,int64 
 	return damage;
 }
 
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 /* Calculates Global Damage adjustments
 * @author [Cydh/PServeRO]
 * @param src Attacker
@@ -1525,6 +1526,7 @@ static int64 battle_calc_normal_damage(struct block_list *src, int64 damage, int
 	}
 	return damage;
 }
+#endif
 
 /**
  * HP/SP drain calculation
@@ -4721,7 +4723,9 @@ struct Damage battle_calc_attack_gvg_bg(struct Damage wd, struct block_list *src
 				wd.damage=battle_calc_gvg_damage(src,target,wd.damage,skill_id,wd.flag);
 			else if( map[target->m].flag.battleground )
 				wd.damage=battle_calc_bg_damage(src,target,wd.damage,skill_id,wd.flag);
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 			wd.damage = battle_calc_normal_damage(src,wd.damage,wd.flag); //Global damage adjustment [Cydh/PServeRO]
+#endif
 		}
 		else if(!wd.damage) {
 			wd.damage2 = battle_calc_damage(src,target,&wd,wd.damage2,skill_id,skill_lv);
@@ -4729,7 +4733,9 @@ struct Damage battle_calc_attack_gvg_bg(struct Damage wd, struct block_list *src
 				wd.damage2 = battle_calc_gvg_damage(src,target,wd.damage2,skill_id,wd.flag);
 			else if( map[target->m].flag.battleground )
 				wd.damage2 = battle_calc_bg_damage(src,target,wd.damage2,skill_id,wd.flag);
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 			wd.damage2 = battle_calc_normal_damage(src,wd.damage,wd.flag); //Global damage adjustment [Cydh/PServeRO]
+#endif
 		}
 		else {
 			int64 d1 = wd.damage + wd.damage2,d2 = wd.damage2;
@@ -4738,7 +4744,9 @@ struct Damage battle_calc_attack_gvg_bg(struct Damage wd, struct block_list *src
 				wd.damage = battle_calc_gvg_damage(src,target,wd.damage,skill_id,wd.flag);
 			else if( map[target->m].flag.battleground )
 				wd.damage = battle_calc_bg_damage(src,target,wd.damage,skill_id,wd.flag);
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 			wd.damage = battle_calc_normal_damage(src,wd.damage,wd.flag); //Global damage adjustment [Cydh/PServeRO]
+#endif
 			wd.damage2 = (int64)d2*100/d1 * wd.damage/100;
 			if(wd.damage > 1 && wd.damage2 < 1) wd.damage2 = 1;
 			wd.damage-=wd.damage2;

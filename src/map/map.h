@@ -693,6 +693,11 @@ struct map_data {
 		unsigned nomineeffect : 1; //allow /mineeffect
 		unsigned nolockon : 1;
 		unsigned notomb : 1;
+#ifdef ADJUST_SKILL_DAMAGE
+		unsigned skill_damage : 1;
+#endif
+
+#ifdef PROJECT_SKILL_MAP_ADJUSTMENT
 		// Skill map adjustments [Cydh/PServeRO]
 		unsigned skill_maxcount : 1;
 		unsigned skill_cast : 1;
@@ -702,10 +707,11 @@ struct map_data {
 		unsigned skill_duration : 1;
 		unsigned skill_duration2 : 1;
 		unsigned skill_cooldown : 1;
-#ifdef ADJUST_SKILL_DAMAGE
-		unsigned skill_damage : 1;
 #endif
-		unsigned atk_rate : 1; // Global Damage adjustment. [Cydh/PServeRO]
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
+		// Global Damage adjustment. [Cydh/PServeRO]
+		unsigned atk_rate : 1;
+#endif
 	} flag;
 	struct point save;
 	struct npc_data *npc[MAX_NPC_PER_MAP];
@@ -725,6 +731,7 @@ struct map_data {
 #ifdef ADJUST_SKILL_DAMAGE
 		struct s_skill_damage damage;
 #endif
+#ifdef PROJECT_SKILL_MAP_ADJUSTMENT
 		// Skill map adjustments [Cydh/PServeRO]
 		struct s_map_skill_adjust
 			skill_maxcount[MAX_MAP_SKILL_MODIFIER],
@@ -735,6 +742,8 @@ struct map_data {
 			skill_duration[MAX_MAP_SKILL_MODIFIER],
 			skill_duration2[MAX_MAP_SKILL_MODIFIER],
 			skill_cooldown[MAX_MAP_SKILL_MODIFIER];
+#endif
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 		//Global Damage Adjustment [Cydh/PServeRO]
 		uint16 atk_short_damage_rate,
 			atk_long_damage_rate,
@@ -742,6 +751,7 @@ struct map_data {
 			atk_magic_damage_rate,
 			atk_misc_damage_rate,
 			atk_attacker;
+#endif
 	} adjust;
 #ifdef ADJUST_SKILL_DAMAGE
 	struct {
@@ -750,7 +760,7 @@ struct map_data {
 	} skill_damage;
 #endif
 
-#ifdef DISPLAY_MAP_DESC
+#ifdef PROJECT_DISPLAY_MAP_DESC
 	// [Cydh/PServeRO]
 	char desc[CHAT_SIZE_MAX];
 	unsigned long desc_color;
@@ -1038,7 +1048,7 @@ extern char vending_items_db[32];
 
 void do_shutdown(void);
 
-#ifdef DISPLAY_MAP_DESC
+#ifdef PROJECT_DISPLAY_MAP_DESC
 void map_load_name_desc(void);
 #endif
 

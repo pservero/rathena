@@ -3769,6 +3769,7 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 		ShowInfo("npc_parse_mapflag: skill_damage: ADJUST_SKILL_DAMAGE is inactive (core.h). Skipping this mapflag..\n");
 #endif
 	}
+#ifdef PROJECT_SKILL_MAP_ADJUSTMENT
 	// Skill map adjustments [Cydh/PServeRO]
 	else if (!strncmp(w3,"skill_",6)) {
 		uint8 adjust_type = 0;
@@ -3896,6 +3897,8 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 			}
 		}
 	}
+#endif
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 	// Global Damage adjustment. [Cydh/PServeRO]
 	else if (!strcmpi(w3,"atk_rate")) {
 		if (!state) {
@@ -3934,6 +3937,7 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 				ShowInfo("npc_parse_mapflag: atk_rate: Not sufficient values (file '%s', line '%d'). Skipping..\n",filepath,strline(buffer,start-buffer));
 		}
 	}
+#endif
 	else
 		ShowError("npc_parse_mapflag: unrecognized mapflag '%s' (file '%s', line '%d').\n", w3, filepath, strline(buffer,start-buffer));
 

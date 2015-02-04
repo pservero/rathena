@@ -2034,6 +2034,7 @@ bool skill_is_combo(uint16 skill_id);
 void skill_combo_toogle_inf(struct block_list* bl, uint16 skill_id, int inf);
 void skill_combo(struct block_list* src,struct block_list *dsrc, struct block_list *bl, uint16 skill_id, uint16 skill_lv, int tick);
 
+#ifdef PROJECT_SKILL_MAP_ADJUSTMENT
 // Skill map adjustments [Cydh/PServeRO]
 int skill_get_maxcount2(uint16 skill_id, uint16 skill_lv, int m);
 int skill_get_cast2(uint16 skill_id, uint16 skill_lv, int m);
@@ -2043,6 +2044,16 @@ int skill_get_walkdelay2(uint16 skill_id, uint16 skill_lv, int m);
 int skill_get_duration(uint16 skill_id, uint16 skill_lv, int m);
 int skill_get_duration2(uint16 skill_id, uint16 skill_lv, int m);
 int skill_get_cooldown2(uint16 skill_id, uint16 skill_lv, int m);
+#else
+#define skill_get_maxcount2(skill_id,skill_lv,m)   ( skill_get_maxcount((skill_id), (skill_lv)) )
+#define skill_get_cast2(skill_id,skill_lv,m)       ( skill_get_cast((skill_id), (skill_lv)) )
+#define skill_get_fixed_cast2(skill_id,skill_lv,m) ( skill_get_fixed_cast((skill_id), (skill_lv)) )
+#define skill_get_actdelay2(skill_id,skill_lv,m)   ( skill_get_delay((skill_id), (skill_lv)) )
+#define skill_get_walkdelay2(skill_id,skill_lv,m)  ( skill_get_walkdelay((skill_id), (skill_lv)) )
+#define skill_get_duration(skill_id,skill_lv,m)    ( skill_get_time((skill_id), (skill_lv)) )
+#define skill_get_duration2(skill_id,skill_lv,m)   ( skill_get_time2((skill_id), (skill_lv)) )
+#define skill_get_cooldown2(skill_id,skill_lv,m)   ( skill_get_cooldown((skill_id), (skill_lv)) )
+#endif
 
 #ifdef ADJUST_SKILL_DAMAGE
 /// Skill Damage target

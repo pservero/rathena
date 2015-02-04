@@ -14,7 +14,7 @@
  * Custom Commands by PServeRO
  **/
 ACMD_DEF(gstoreall),
-#ifdef DISPLAY_MAP_DESC
+#ifdef PROJECT_DISPLAY_MAP_DESC
 ACMD_DEF(reloadmapdesc),
 #endif
 

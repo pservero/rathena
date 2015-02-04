@@ -67,7 +67,7 @@ ACMD_FUNC(gstoreall) {
 	return 0;
 }
 
-#ifdef DISPLAY_MAP_DESC
+#ifdef PROJECT_DISPLAY_MAP_DESC
 /** @reloadmapdesc - Reloads Map Description database file
 * @author Cydh/PServeRO
 */

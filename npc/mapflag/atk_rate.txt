@@ -1,5 +1,5 @@
 // ================================================================
-// Mapflag for Skill Adjustments
+// Mapflag for Global Damage Rate
 // [Cydh] house.bad@gmail.com
 // http://pservero.com
 // ================================================================

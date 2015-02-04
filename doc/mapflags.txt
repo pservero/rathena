@@ -444,3 +444,25 @@ Adjusts 'time2' (a.k.a effect/buff duration2) of skill at this map.
 Adjusts cooldown time of skill at this map.
 
 ---------------------------------------
+
+*atk_rate	<AttackerType>,<ShortDamageRate>{,<LongDamageRate>,<WeaponDamageRate>,<MagicDamageRate>,<MiscDamageRate>}
+
+Adjust damage rate at this map.
+
+'AttackerType' is bitmask of
+	1 : Player
+	2 : Monster
+	4 : Pet
+	8 : Homunculus
+	16: Mercenary
+	32: Elemental
+
+'ShortDamageRate'  : Damage rate for melee attack
+'LongDamageRate'   : Damage rate for ranged attack (optional)
+'WeaponDamageRate' : Damage rate for weapon attack (optional)
+'MagicDamageRate'  : Damage rate for magic attack (optional)
+'MiscDamageRate'   : Damage rate for misc attack (optional)
+
+If only ShortDamageRate that has value, other rate will use same value.
+
+---------------------------------------

@@ -3235,6 +3235,7 @@ void map_flags_init(void)
 		if (map[i].skill_damage.count)
 			map_skill_damage_free(&map[i]);
 #endif
+#ifdef PROJECT_SKILL_MAP_ADJUSTMENT
 		// Skill map adjustments [Cydh]
 		memset(map[i].adjust.skill_maxcount, 0, sizeof(map[i].adjust.skill_maxcount));
 		memset(map[i].adjust.skill_cast, 0, sizeof(map[i].adjust.skill_cast));
@@ -3244,6 +3245,8 @@ void map_flags_init(void)
 		memset(map[i].adjust.skill_duration, 0, sizeof(map[i].adjust.skill_duration));
 		memset(map[i].adjust.skill_duration2, 0, sizeof(map[i].adjust.skill_duration2));
 		memset(map[i].adjust.skill_cooldown, 0, sizeof(map[i].adjust.skill_cooldown));
+#endif
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 		//Global Damage Adjustment [Cydh]
 		map[i].adjust.atk_attacker = BL_PC;
 		map[i].adjust.atk_short_damage_rate = 100;
@@ -3251,6 +3254,7 @@ void map_flags_init(void)
 		map[i].adjust.atk_weapon_damage_rate = 100;
 		map[i].adjust.atk_magic_damage_rate = 100;
 		map[i].adjust.atk_misc_damage_rate = 100;
+#endif
 
 		// adjustments
 		if( battle_config.pk_mode )
@@ -4416,7 +4420,7 @@ int do_init(int argc, char *argv[])
 	return 0;
 }
 
-#ifdef DISPLAY_MAP_DESC
+#ifdef PROJECT_DISPLAY_MAP_DESC
 /* Parse each line of map description file [Cydh/PServeRO] */
 static bool map_parse_row_desc(char* split[], int columns, int current) {
 	short m = map_mapname2mapid(split[0]);

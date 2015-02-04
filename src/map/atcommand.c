@@ -3994,6 +3994,7 @@ ACMD_FUNC(mapinfo) {
 	}
 #endif
 
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 	//Global Damage adjustment. [Cydh/PServeRO]
 	if (map[m_id].flag.atk_rate) {
 		sprintf(atcmd_output,msg_txt(sd,534), //Damage Adjustment: Attacker: %d. Short: %d%%. Long: %d%%. Weapon: %d%%. Magic: %d%%. Misc: %d%%
@@ -4005,6 +4006,7 @@ ACMD_FUNC(mapinfo) {
 			map[m_id].adjust.atk_misc_damage_rate);
 		clif_displaymessage(fd,atcmd_output);
 	}
+#endif
 
 	strcpy(atcmd_output,msg_txt(sd,1046)); // PvP Flags:
 	if (map[m_id].flag.pvp)
@@ -7973,7 +7975,9 @@ ACMD_FUNC(mapflag) {
 #ifdef ADJUST_SKILL_DAMAGE
 		checkflag(skill_damage);
 #endif
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 		checkflag(atk_rate);
+#endif
 		clif_displaymessage(sd->fd," ");
 		clif_displaymessage(sd->fd,msg_txt(sd,1312)); // Usage: "@mapflag monster_noteleport 1" (0=Off | 1=On)
 		clif_displaymessage(sd->fd,msg_txt(sd,1313)); // Type "@mapflag available" to list the available mapflags.
@@ -7998,7 +8002,9 @@ ACMD_FUNC(mapflag) {
 #ifdef ADJUST_SKILL_DAMAGE
 	setflag(skill_damage);
 #endif
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 	setflag(atk_rate);
+#endif
 
 	clif_displaymessage(sd->fd,msg_txt(sd,1314)); // Invalid flag name or flag.
 	clif_displaymessage(sd->fd,msg_txt(sd,1312)); // Usage: "@mapflag monster_noteleport 1" (0=Off | 1=On)
@@ -8013,6 +8019,9 @@ ACMD_FUNC(mapflag) {
 	clif_displaymessage(sd->fd,"reset, chmautojoin, nousecart, noitemconsumption, nosumstarmiracle, nolockon, notomb");
 #ifdef ADJUST_SKILL_DAMAGE
 	clif_displaymessage(sd->fd,"skill_damage");
+#endif
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
+	clif_displaymessage(sd->fd,"atk_rate");
 #endif
 
 #undef checkflag

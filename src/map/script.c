@@ -11431,6 +11431,7 @@ BUILDIN_FUNC(getmapflag)
 					script_pushint(st,ret_val); break;
 				} break;
 #endif
+#ifdef PROJECT_SKILL_MAP_ADJUSTMENT
 			case MF_SKILL_MAXCOUNT:		script_pushint(st,map[m].flag.skill_maxcount); break;
 			case MF_SKILL_CAST:			script_pushint(st,map[m].flag.skill_cast); break;
 			case MF_SKILL_FIXEDCAST:	script_pushint(st,map[m].flag.skill_fixed_cast); break;
@@ -11439,6 +11440,8 @@ BUILDIN_FUNC(getmapflag)
 			case MF_SKILL_DURATION:		script_pushint(st,map[m].flag.skill_duration); break;
 			case MF_SKILL_DURATION2:	script_pushint(st,map[m].flag.skill_duration2); break;
 			case MF_SKILL_COOLDOWN:		script_pushint(st,map[m].flag.skill_cooldown); break;
+#endif
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 			case MF_ATK_RATE:
 				{
 					int ret_val = 0, type = 0;
@@ -11458,6 +11461,7 @@ BUILDIN_FUNC(getmapflag)
 					script_pushint(st,ret_val);
 					break;
 				}
+#endif
 		}
 	}
 	return SCRIPT_CMD_SUCCESS;
@@ -11580,6 +11584,7 @@ BUILDIN_FUNC(setmapflag)
 					map[m].flag.skill_damage = 1;
 				} break;
 #endif
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 			case MF_ATK_RATE:
 				{
 					int type=0;
@@ -11605,6 +11610,7 @@ BUILDIN_FUNC(setmapflag)
 					}
 					map[m].flag.atk_rate = 1;
 				} break;
+#endif
 		}
 	}
 	return SCRIPT_CMD_SUCCESS;
@@ -11710,6 +11716,7 @@ BUILDIN_FUNC(removemapflag)
 						map_skill_damage_free(&map[m]);
 				} break;
 #endif
+#ifdef PROJECT_GLOBAL_DAMAGE_RATE
 			case MF_ATK_RATE:
 				map[m].flag.atk_rate = 0;
 				map[m].adjust.atk_attacker = BL_PC;
@@ -11719,6 +11726,7 @@ BUILDIN_FUNC(removemapflag)
 					map[m].adjust.atk_magic_damage_rate =
 					map[m].adjust.atk_misc_damage_rate = 100;
 				break;
+#endif
 		}
 	}
 	return SCRIPT_CMD_SUCCESS;

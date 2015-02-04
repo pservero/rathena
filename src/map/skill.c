@@ -20552,6 +20552,7 @@ static bool skill_parse_row_skilldamage(char* split[], int columns, int current)
 }
 #endif
 
+#ifdef PROJECT_SKILL_MAP_ADJUSTMENT
 #define skill_get_map_adjust(ori, skill_id, skill_lv, var) {\
 	if (!map[m].flag.var)\
 		return ori;\
@@ -20606,6 +20607,7 @@ int skill_get_duration2(uint16 skill_id, uint16 skill_lv, int m) {
 int skill_get_cooldown2(uint16 skill_id, uint16 skill_lv, int m) {
 	skill_get_map_adjust(skill_get_cooldown(skill_id, skill_lv), skill_id, skill_lv, skill_cooldown);
 }
+#endif
 
 /*===============================
  * DB reading.

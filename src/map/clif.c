@@ -9881,7 +9881,7 @@ void clif_parse_LoadEndAck(int fd,struct map_session_data *sd)
 	if(!battle_config.pc_invincible_time)
 		skill_unit_move(&sd->bl,gettick(),1);
 
-#ifdef DISPLAY_MAP_DESC
+#ifdef PROJECT_DISPLAY_MAP_DESC
 	// Announce map description [Cydh/PServeRO]
 	if (map[sd->bl.m].desc[0] != '\0') {
 		char output[CHAT_SIZE_MAX];
