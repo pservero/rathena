@@ -93,6 +93,9 @@
 	#define MAX_CHAR_VIP 0
 #endif
 
+/// Enable refine bonus [Cydh/PServeRO]
+#define PROJECT_REFINE_BONUS
+
 /**
  * No settings past this point
  **/

@@ -39,6 +39,18 @@ static struct {
 	int randombonus_max[MAX_REFINE]; /// Cumulative maximum random bonus damage
 } refine_info[REFINE_TYPE_MAX];
 
+#ifdef PROJECT_REFINE_BONUS
+#define REFINE_BONUS_MAX_TYPE REFINE_TYPE_MAX+5 /// Refine type: 0: armor, 1~4: wlv, 5~8: shadow weapon lv, 9: shadow armor
+struct s_refine_bonus {
+	struct script_code *script[MAX_REFINE+1]; ///< Bonus script for refine 0 ~ MAX_REFINE
+	bool ref[MAX_REFINE+1]; ///< Script is using reference, don't clear script in this pointer
+};
+static struct s_refine_bonus refine_bonus[REFINE_BONUS_MAX_TYPE]; /// Refine bonus script table
+
+static void refine_bonus_readdb(void);
+static void refine_bonus_free(void);
+#endif
+
 static int atkmods[3][MAX_WEAPON_TYPE];	/// ATK weapon modification for size (size_fix.txt)
 
 static struct eri *sc_data_ers; /// For sc_data entries
@@ -3023,6 +3035,19 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 				if (!calculating) // Abort, run_script retriggered this. [Skotlex]
 					return 1;
 			}
+#ifdef PROJECT_REFINE_BONUS
+			if (refine_bonus[wlv].script[r] && (pc_has_permission(sd,PC_PERM_USE_ALL_EQUIPMENT) || !itemdb_isNoEquip(sd->inventory_data[index],sd->bl.m))) {
+				if (wd == &sd->left_weapon) {
+					sd->state.lr_flag = 1;
+					run_script(refine_bonus[wlv].script[r],0,sd->bl.id,0);
+					sd->state.lr_flag = 0;
+				}
+				else
+					run_script(refine_bonus[wlv].script[r],0,sd->bl.id,0);
+				if (!calculating)
+					return 1;
+			}
+#endif
 			if(sd->status.inventory[index].card[0]==CARD0_FORGE) { // Forged weapon
 				wd->star += (sd->status.inventory[index].card[1]>>8);
 				if(wd->star >= 15) wd->star = 40; // 3 Star Crumbs now give +40 dmg
@@ -3045,12 +3070,60 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 				if (!calculating) // Abort, run_script retriggered this. [Skotlex]
 					return 1;
 			}
+#ifdef PROJECT_REFINE_BONUS
+			if (refine_bonus[REFINE_TYPE_ARMOR].script[r] && (pc_has_permission(sd,PC_PERM_USE_ALL_EQUIPMENT) || !itemdb_isNoEquip(sd->inventory_data[index],sd->bl.m))) {
+				if( i == EQI_HAND_L)
+					sd->state.lr_flag = 3;
+				run_script(refine_bonus[REFINE_TYPE_ARMOR].script[r], 0, sd->bl.id, 0);
+				if (i == EQI_HAND_L)
+					sd->state.lr_flag = 0;
+				if (!calculating)
+					return 1;
+			}
+#endif
 		} else if( sd->inventory_data[index]->type == IT_SHADOWGEAR ) { // Shadow System
 			if (sd->inventory_data[index]->script && (pc_has_permission(sd,PC_PERM_USE_ALL_EQUIPMENT) || !itemdb_isNoEquip(sd->inventory_data[index],sd->bl.m))) {
 				run_script(sd->inventory_data[index]->script,0,sd->bl.id,0);
 				if( !calculating )
 					return 1;
 			}
+
+#ifdef PROJECT_REFINE_BONUS
+			if (sd->inventory_data[index]->equip&EQP_SHADOW_WEAPON) { //Shadow Weapon
+				uint8 wlv = cap_value(sd->inventory_data[index]->wlv+4, 5, 8);
+				uint8 r = sd->status.inventory[index].refine;
+
+				struct weapon_data *wd;
+
+				if (i == EQI_SHADOW_SHIELD && sd->status.inventory[index].equip == EQP_SHADOW_SHIELD)
+					wd = &sd->left_weapon;
+				else
+					wd = &sd->right_weapon;
+
+				if (refine_bonus[wlv].script[r]) {
+					if (wd == &sd->left_weapon) {
+						sd->state.lr_flag = 1;
+						run_script(refine_bonus[wlv].script[r],0,sd->bl.id,0);
+						sd->state.lr_flag = 0;
+					} else
+						run_script(refine_bonus[wlv].script[r],0,sd->bl.id,0);
+					if (!calculating)
+						return 1;
+				}
+			}
+			else { //Shadow Armors (Shield, Body, Shoes, and Accessories)
+				uint8 r = sd->status.inventory[index].refine;
+				if (refine_bonus[9].script[r]) {
+					if (i == EQI_SHADOW_SHIELD)
+						sd->state.lr_flag = 3;
+					run_script(refine_bonus[9].script[r],0,sd->bl.id,0);
+					if (i == EQI_SHADOW_SHIELD)
+						sd->state.lr_flag = 0;
+					if (!calculating)
+						return 1;
+				}
+			}
+#endif
 		}
 	}
 
@@ -12922,6 +12995,11 @@ int status_readdb(void)
 			for(k=0;k<ELE_ALL;k++)
 				attr_fix_table[i][j][k]=100;
 
+#ifdef PROJECT_REFINE_BONUS
+	refine_bonus_free();
+	refine_bonus_readdb();
+#endif
+
 	// read databases
 	// path,filename,separator,mincol,maxcol,maxrow,func_parsor
 	for(i=0; i<ARRAYLENGTH(dbsubpath); i++){
@@ -12964,7 +13042,146 @@ int do_init_status(void)
 	add_timer_interval(natural_heal_prev_tick + NATURAL_HEAL_INTERVAL, status_natural_heal_timer, 0, 0, NATURAL_HEAL_INTERVAL);
 	return 0;
 }
+
+#ifdef PROJECT_REFINE_BONUS
+/**
+ * Read file and init refine_bonus scripts
+ * @param filename
+ * @param silent
+ * @author [Cydh/PServeRO]
+ **/
+static void refine_bonus_readdb_sub(const char *filename, bool silent) {
+	FILE *fp;
+	char line[1024];
+	uint16 entries = 0, lines = 0;
+
+	if ((fp = fopen(filename, "r")) == NULL) {
+		if (!silent)
+			ShowError("refine_bonus_readdb_sub: Cannot read \"%s\"\n", filename);
+		return;
+	}
+
+	while (fgets(line, sizeof(line), fp)) {
+		char *str[3], *p;
+		uint8 i, type, refine;
+		struct script_code *script = NULL;
+
+		lines++;
+
+		if (line[0] == '/' && line[1] == '/')
+			continue;
+
+		memset(str,0,sizeof(str));
+		p = line;
+
+		while (ISSPACE(*p))
+			++p;
+		if (*p == '\0')
+			continue;
+		for (i = 0; i < 2; ++i) {
+			str[i] = p;
+			p = strchr(p,',');
+			if (p == NULL)
+				break;
+			*p = '\0';
+			++p;
+		}
+
+		if (p == NULL) {
+			ShowError("refine_bonus_readdb_sub: Insufficient columns in \"%s\":%d.\n", filename, lines);
+			continue;
+		}
+
+		// Equip type
+		type = atoi(str[0]);
+		if (type < REFINE_TYPE_ARMOR || type >= REFINE_BONUS_MAX_TYPE) {
+			ShowError("refine_bonus_readdb_sub: Invalid item type '%s', valid type: %d - %d. \"%s\":%d\n", str[0], REFINE_TYPE_ARMOR, REFINE_BONUS_MAX_TYPE, filename, lines);
+			continue;
+		}
+
+		// Refine number
+		refine = atoi(str[1]);
+		if (refine < 0 || refine > MAX_REFINE) {
+			ShowError("refine_bonus_readdb_sub: Invalid refine number, valid value: 0 - %d). \"%s\":%d\n", str[1], MAX_REFINE, filename, lines);
+			continue;
+		}
+
+		// Script
+		if (*p != '{') {
+			ShowError("refine_bonus_readdb_sub: Invalid format (Script column-start) in \"%s\":%d.\n", filename, lines);
+			continue;
+		}
+		str[2] = p;
+		p = strstr(p+1,"}");
+		if (strchr(p,',') != NULL) {
+			ShowError("refine_bonus_readdb_sub: Invalid format (Script column-end) in \"%s\":%d.\n", filename, lines);
+			continue;
+		}
+
+		if ((script = parse_script(str[2], filename, lines, 0)))
+			refine_bonus[type].script[refine] = script;
+
+		entries++;
+	}
+	fclose(fp);
+
+	ShowStatus("Done reading '"CL_WHITE"%d"CL_RESET"' entries in '"CL_WHITE"%s"CL_RESET"'\n", entries, filename);
+}
+
+/**
+ * Prepare file to being read
+ * @author [Cydh/PServeRO]
+ **/
+static void refine_bonus_readdb(void) {
+	const char *filename[] = {
+		"refine_bonus.txt", DBIMPORT"/refine_bonus.txt",
+	};
+	uint8 i;
+	StringBuf buf;
+
+	StringBuf_Init(&buf);
+	for (i = 0; i < ARRAYLENGTH(filename); i++) {
+		StringBuf_Clear(&buf);
+		StringBuf_Printf(&buf, "%s/%s", db_path, filename[i]);
+		refine_bonus_readdb_sub(StringBuf_Value(&buf), (i));
+	}
+	StringBuf_Destroy(&buf);
+
+	/** Clearing up, fill the blank bonus with value.
+	    Example, +1 has bonus bStr,1 and +5 has bStr,3 so make +2 ~ +4 has +1 bonus **/
+	for (i = 0; i < REFINE_BONUS_MAX_TYPE; i++) {
+		uint8 j;
+		for (j = 0; j < MAX_REFINE+1; j++) {
+			if (!refine_bonus[i].script[j] && j > 0) {
+				refine_bonus[i].script[j] = refine_bonus[i].script[j-1];
+				refine_bonus[i].ref[j] = true;
+			}
+		}
+	}
+}
+
+/**
+ * Clear refine bonus scripts
+ * @author [Cydh/PServeRO]
+ **/
+static void refine_bonus_free(void) {
+	uint8 i;
+	for (i = 0; i < REFINE_BONUS_MAX_TYPE; i++) {
+		uint8 j;
+		for (j = 0; j < MAX_REFINE+1; j++) {
+			if (refine_bonus[i].script[j] && !refine_bonus[i].ref[j])
+				script_free_code(refine_bonus[i].script[j]);
+			refine_bonus[i].script[j] = NULL;
+			refine_bonus[i].ref[j] = false;
+		}
+	}
+}
+#endif
+
 void do_final_status(void)
 {
+#ifdef PROJECT_REFINE_BONUS
+	refine_bonus_free();
+#endif
 	ers_destroy(sc_data_ers);
 }

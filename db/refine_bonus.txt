@@ -1,0 +1,157 @@
+// =============================================
+// [Cydh/PServeRO]
+// house.bad@gmail.com
+// =============================================
+// Structure:
+//     Type,RefineNumber,{ Script }
+// ---------------------------------------------
+// Type:
+//     - 0 : Armor
+//     - 1 : Weapon Level 1
+//     - 2 : Weapon Level 2
+//     - 3 : Weapon Level 3
+//     - 4 : Weapon Level 4
+//     - 5 : Shadow Weapon (Level 1)
+//     - 6 : Shadow Weapon (Level 2)
+//     - 7 : Shadow Weapon (Level 3)
+//     - 8 : Shadow Weapon (Level 4)
+//     - 9 : Shadow Armor
+//
+// ---------------------------------------------
+// RefineNumber:
+//     - 0 ~ MAX_REFINE
+// ---------------------------------------------
+// { Script }
+//     - Works like { Script } on item_db.txt Look at doc/item_bonus.txt
+// =============================================
+// NOTES:
+//     - Every line must be written completely!
+// =============================================
+// Examples:
+//     0,1,{ bonus bVit,5; }     - Add 5 Vit for +0 Armor
+//     4,10,{ bonus bStr,5; }    - Add 10 Str for +10 Weapon level 4
+// ---------------------------------------------
+//0,1,{ bonus bVit,1; }
+//0,2,{ bonus bVit,2; }
+//0,3,{ bonus bVit,3; }
+//0,4,{ bonus bVit,4; }
+//0,5,{ bonus bVit,5; }
+//0,6,{ bonus bVit,6; }
+//0,7,{ bonus bVit,7; }
+//0,8,{ bonus bVit,8; }
+//0,9,{ bonus bVit,9; }
+//0,10,{ bonus bVit,10; }
+//0,11,{ bonus bVit,11; }
+//0,12,{ bonus bVit,12; }
+//0,13,{ bonus bVit,13; }
+//0,14,{ bonus bVit,14; }
+//0,15,{ bonus bVit,15; }
+//0,16,{ bonus bVit,16; }
+//0,17,{ bonus bVit,17; }
+//0,18,{ bonus bVit,18; }
+//0,19,{ bonus bVit,19; }
+//0,20,{ bonus bVit,20; }
+//
+//1,1,{ bonus bStr,1; }
+//1,2,{ bonus bStr,2; }
+//1,3,{ bonus bStr,3; }
+//1,4,{ bonus bStr,4; }
+//1,5,{ bonus bStr,5; }
+//1,6,{ bonus bStr,6; }
+//1,7,{ bonus bStr,7; }
+//1,8,{ bonus bStr,8; }
+//1,9,{ bonus bStr,9; }
+//1,10,{ bonus bStr,10; }
+//1,11,{ bonus bStr,11; }
+//1,12,{ bonus bStr,12; }
+//1,13,{ bonus bStr,13; }
+//1,14,{ bonus bStr,14; }
+//1,15,{ bonus bStr,15; }
+//1,16,{ bonus bStr,16; }
+//1,17,{ bonus bStr,17; }
+//1,18,{ bonus bStr,18; }
+//1,19,{ bonus bStr,19; }
+//1,20,{ bonus bStr,20; }
+//
+//2,1,{ bonus bStr,1; bonus bHit,1; }
+//2,2,{ bonus bStr,2; bonus bHit,2; }
+//2,3,{ bonus bStr,3; bonus bHit,3; }
+//2,4,{ bonus bStr,4; bonus bHit,4; }
+//2,5,{ bonus bStr,5; bonus bHit,5; }
+//2,6,{ bonus bStr,6; bonus bHit,6; }
+//2,7,{ bonus bStr,7; bonus bHit,7; }
+//2,8,{ bonus bStr,8; bonus bHit,8; }
+//2,9,{ bonus bStr,9; bonus bHit,9; }
+//2,10,{ bonus bStr,10; bonus bHit,10; }
+//2,11,{ bonus bStr,11; bonus bHit,11; }
+//2,12,{ bonus bStr,12; bonus bHit,12; }
+//2,13,{ bonus bStr,13; bonus bHit,13; }
+//2,14,{ bonus bStr,14; bonus bHit,14; }
+//2,15,{ bonus bStr,15; bonus bHit,15; }
+//2,16,{ bonus bStr,16; bonus bHit,16; }
+//2,17,{ bonus bStr,17; bonus bHit,17; }
+//2,18,{ bonus bStr,18; bonus bHit,18; }
+//2,19,{ bonus bStr,19; bonus bHit,19; }
+//2,20,{ bonus bStr,20; bonus bHit,20; }
+//
+//3,1,{ bonus bStr,1; bonus bHit,1; bonus bMatk,1; }
+//3,2,{ bonus bStr,2; bonus bHit,2; bonus bMatk,2; }
+//3,3,{ bonus bStr,3; bonus bHit,3; bonus bMatk,3; }
+//3,4,{ bonus bStr,4; bonus bHit,4; bonus bMatk,4; }
+//3,5,{ bonus bStr,5; bonus bHit,5; bonus bMatk,5; }
+//3,6,{ bonus bStr,6; bonus bHit,6; bonus bMatk,6; }
+//3,7,{ bonus bStr,7; bonus bHit,7; bonus bMatk,7; }
+//3,8,{ bonus bStr,8; bonus bHit,8; bonus bMatk,8; }
+//3,9,{ bonus bStr,9; bonus bHit,9; bonus bMatk,9; }
+//3,10,{ bonus bStr,10; bonus bHit,10; bonus bMatk,10; }
+//3,11,{ bonus bStr,11; bonus bHit,11; bonus bMatk,11; }
+//3,12,{ bonus bStr,12; bonus bHit,12; bonus bMatk,12; }
+//3,13,{ bonus bStr,13; bonus bHit,13; bonus bMatk,13; }
+//3,14,{ bonus bStr,14; bonus bHit,14; bonus bMatk,14; }
+//3,15,{ bonus bStr,15; bonus bHit,15; bonus bMatk,15; }
+//3,16,{ bonus bStr,16; bonus bHit,16; bonus bMatk,16; }
+//3,17,{ bonus bStr,17; bonus bHit,17; bonus bMatk,17; }
+//3,18,{ bonus bStr,18; bonus bHit,18; bonus bMatk,18; }
+//3,19,{ bonus bStr,19; bonus bHit,19; bonus bMatk,19; }
+//3,20,{ bonus bStr,20; bonus bHit,20; bonus bMatk,20; }
+//
+//4,1,{ bonus bStr,1; bonus bHit,1; bonus bMatk,1; bonus bDef,1; bonus bMdef,1; }
+//4,2,{ bonus bStr,2; bonus bHit,2; bonus bMatk,2; bonus bDef,2; bonus bMdef,2; }
+//4,3,{ bonus bStr,3; bonus bHit,3; bonus bMatk,3; bonus bDef,3; bonus bMdef,3; }
+//4,4,{ bonus bStr,4; bonus bHit,4; bonus bMatk,4; bonus bDef,4; bonus bMdef,4; }
+//4,5,{ bonus bStr,5; bonus bHit,5; bonus bMatk,5; bonus bDef,5; bonus bMdef,5; }
+//4,6,{ bonus bStr,6; bonus bHit,6; bonus bMatk,6; bonus bDef,6; bonus bMdef,6; }
+//4,7,{ bonus bStr,7; bonus bHit,7; bonus bMatk,7; bonus bDef,7; bonus bMdef,7; }
+//4,8,{ bonus bStr,8; bonus bHit,8; bonus bMatk,8; bonus bDef,8; bonus bMdef,8; }
+//4,9,{ bonus bStr,9; bonus bHit,9; bonus bMatk,9; bonus bDef,9; bonus bMdef,9; }
+//4,10,{ bonus bStr,10; bonus bHit,10; bonus bMatk,10; bonus bDef,10; bonus bMdef,10; }
+//4,11,{ bonus bStr,11; bonus bHit,11; bonus bMatk,11; bonus bDef,11; bonus bMdef,11; }
+//4,12,{ bonus bStr,12; bonus bHit,12; bonus bMatk,12; bonus bDef,12; bonus bMdef,12; }
+//4,13,{ bonus bStr,13; bonus bHit,13; bonus bMatk,13; bonus bDef,13; bonus bMdef,13; }
+//4,14,{ bonus bStr,14; bonus bHit,14; bonus bMatk,14; bonus bDef,14; bonus bMdef,14; }
+//4,15,{ bonus bStr,15; bonus bHit,15; bonus bMatk,15; bonus bDef,15; bonus bMdef,15; }
+//4,16,{ bonus bStr,16; bonus bHit,16; bonus bMatk,16; bonus bDef,16; bonus bMdef,16; }
+//4,17,{ bonus bStr,17; bonus bHit,17; bonus bMatk,17; bonus bDef,17; bonus bMdef,17; }
+//4,18,{ bonus bStr,18; bonus bHit,18; bonus bMatk,18; bonus bDef,18; bonus bMdef,18; }
+//4,19,{ bonus bStr,19; bonus bHit,19; bonus bMatk,19; bonus bDef,19; bonus bMdef,19; }
+//4,20,{ bonus bStr,20; bonus bHit,20; bonus bMatk,20; bonus bDef,20; bonus bMdef,20; }
+//
+//5,0,{ bonus bAllStats,1; }
+//5,10,{ bonus bAllStats,2; }
+//5,20,{ bonus bAllStats,3; }
+//
+//6,0,{ bonus bAllStats,4; }
+//6,10,{ bonus bAllStats,5; }
+//6,20,{ bonus bAllStats,6; }
+//
+//7,0,{ bonus bAllStats,7; }
+//7,10,{ bonus bAllStats,8; }
+//7,20,{ bonus bAllStats,9; }
+//
+//8,0,{ bonus bAllStats,10; }
+//8,10,{ bonus bAllStats,11; }
+//8,20,{ bonus bAllStats,12; }
+//
+//9,0,{ bonus bAllStats,5; }
+//9,10,{ bonus bAllStats,8; }
+//9,20,{ bonus bAllStats,10; }
