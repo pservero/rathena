@@ -2,7 +2,7 @@
 // Contains the items sold in the ingame cash shop.
 //
 // Structure of Database:
-// Type,ItemID,Price
+// Type,ItemID,Price[,ExpireDuration,Bound]
 //
 // Type:
 //    0: New
@@ -16,3 +16,15 @@
 //
 // Price:
 //    Item cost, in cash points (#CASHPOINTS).
+//
+// ExpireDuration:
+//    Makes the item as rental item after it's bought.
+//    Duration is in minute.
+//
+// Bound:
+//    Makes the item as bound item after it's bought.
+//    0 - None
+//    1 - Account Bound
+//    2 - Guild Bound
+//    3 - Party Bound
+//    4 - Character Bound

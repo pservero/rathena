@@ -47,6 +47,10 @@ enum CASHSHOP_BUY_RESULT
 struct cash_item_data{
 	unsigned short nameid;
 	uint32 price;
+#ifdef PROJECT_CASHSHOP_EXPAND
+	uint32 duration; ///< Rental duration
+	uint8 bound; ///< Bound type
+#endif
 };
 
 struct cash_item_db{

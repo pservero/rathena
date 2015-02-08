@@ -51,6 +51,10 @@ static int cashshop_parse_dbrow( char** str, const char* source, int line ){
 
 		cid->nameid = nameid;
 		cid->price = price;
+#ifdef PROJECT_CASHSHOP_EXPAND
+		cid->duration = str[3] ? atoi(str[3]) * 60 : 0;
+		cid->bound = str[4] ? atoi(str[4]) : 0;
+#endif
 
 		return 1;
 	}else{
@@ -84,7 +88,12 @@ static void cashshop_read_db_txt( void ){
 		}
 
 		while( fgets( line, sizeof( line ), fp ) ){
-			char *str[3], *p;
+#ifdef PROJECT_CASHSHOP_EXPAND
+			char *str[5];
+#else
+			char *str[3];
+#endif
+			char *p;
 			int i;
 			lines++;
 
@@ -99,7 +108,11 @@ static void cashshop_read_db_txt( void ){
 			if( *p == '\0' )
 				continue;
 
+#ifdef PROJECT_CASHSHOP_EXPAND
+			for( i = 0; i < 4; ++i ){
+#else
 			for( i = 0; i < 2; ++i ){
+#endif
 				str[i] = p;
 				p = strchr( p, ',' );
 
@@ -110,7 +123,11 @@ static void cashshop_read_db_txt( void ){
 				++p;
 			}
 
+#ifdef PROJECT_CASHSHOP_EXPAND
+			str[4] = p;
+#else
 			str[2] = p;
+#endif
 			while( !ISSPACE( *p ) && *p != '\0' && *p != '/' )
 				++p;
 
@@ -142,18 +159,30 @@ static int cashshop_read_db_sql( void ){
 	for( fi = 0; fi < ARRAYLENGTH( cash_db_name ); ++fi ){
 		uint32 lines = 0, count = 0;
 
+#ifdef PROJECT_CASHSHOP_EXPAND
+		if( SQL_ERROR == Sql_Query( mmysql_handle, "SELECT `tab`, `item_id`, `price`, `duration`, `bound` FROM `%s`", cash_db_name[fi] ) ){
+#else
 		if( SQL_ERROR == Sql_Query( mmysql_handle, "SELECT `tab`, `item_id`, `price` FROM `%s`", cash_db_name[fi] ) ){
+#endif
 			Sql_ShowDebug( mmysql_handle );
 			continue;
 		}
 
 		while( SQL_SUCCESS == Sql_NextRow( mmysql_handle ) ){
+#ifdef PROJECT_CASHSHOP_EXPAND
+			char* str[5];
+#else
 			char* str[3];
+#endif
 			int i;
 
 			++lines;
 
+#ifdef PROJECT_CASHSHOP_EXPAND
+			for( i = 0; i < 5; ++i ){
+#else
 			for( i = 0; i < 3; ++i ){
+#endif
 				Sql_GetData( mmysql_handle, i, &str[i], NULL );
 
 				if( str[i] == NULL ){
@@ -200,6 +229,13 @@ bool cashshop_buylist( struct map_session_data* sd, uint32 kafrapoints, int n, u
 	uint32 totalcash = 0;
 	uint32 totalweight = 0;
 	int i,new_;
+#ifdef PROJECT_CASHSHOP_EXPAND
+	uint32 *durations;
+	uint8 *bounds;
+#define CASHSHOP_EXPAND_FREE() { if (durations) aFree(durations); if (bounds) aFree(bounds); }
+#else
+#define CASHSHOP_EXPAND_FREE() {}
+#endif
 
 	if( sd == NULL || item_list == NULL ){
 		clif_cashshop_result( sd, 0, CASHSHOP_RESULT_ERROR_UNKNOWN );
@@ -218,6 +254,7 @@ bool cashshop_buylist( struct map_session_data* sd, uint32 kafrapoints, int n, u
 		int j;
 
 		if( tab > CASHSHOP_TAB_SEARCH ){
+			CASHSHOP_EXPAND_FREE()
 			clif_cashshop_result( sd, nameid, CASHSHOP_RESULT_ERROR_UNKNOWN );
 			return false;
 		}
@@ -227,12 +264,20 @@ bool cashshop_buylist( struct map_session_data* sd, uint32 kafrapoints, int n, u
 		nameid = *( item_list + i * 5 ) = cash_shop_items[tab].item[j]->nameid; //item_avail replacement
 
 		if( j == cash_shop_items[tab].count || !itemdb_exists( nameid ) ){
+			CASHSHOP_EXPAND_FREE()
 			clif_cashshop_result( sd, nameid, CASHSHOP_RESULT_ERROR_UNKONWN_ITEM );
 			return false;
+#ifdef PROJECT_CASHSHOP_EXPAND
+		}else if( (!itemdb_isstackable( nameid ) || cash_shop_items[tab].item[j]->duration) && quantity > 1 ){
+			/* ShowWarning( "Player %s (%d:%d) sent a hexed packet trying to buy %d of nonstackable cash item %hu!\n", sd->status.name, sd->status.account_id, sd->status.char_id, quantity, nameid ); */
+			quantity = *( item_list + i * 5 + 2 ) = 1;
+		}
+#else
 		}else if( !itemdb_isstackable( nameid ) && quantity > 1 ){
 			/* ShowWarning( "Player %s (%d:%d) sent a hexed packet trying to buy %d of nonstackable cash item %hu!\n", sd->status.name, sd->status.account_id, sd->status.char_id, quantity, nameid ); */
 			quantity = *( item_list + i * 5 + 2 ) = 1;
 		}
+#endif
 
 		switch( pc_checkadditem( sd, nameid, quantity ) ){
 			case CHKADDITEM_EXIST:
@@ -243,23 +288,39 @@ bool cashshop_buylist( struct map_session_data* sd, uint32 kafrapoints, int n, u
 				break;
 
 			case CHKADDITEM_OVERAMOUNT:
+				CASHSHOP_EXPAND_FREE()
 				clif_cashshop_result( sd, nameid, CASHSHOP_RESULT_ERROR_OVER_PRODUCT_TOTAL_CNT );
 				return false;
 		}
 
 		totalcash += cash_shop_items[tab].item[j]->price * quantity;
 		totalweight += itemdb_weight( nameid ) * quantity;
+#ifdef PROJECT_CASHSHOP_EXPAND
+		if (i) {
+			RECREATE(durations, uint32, i+1);
+			RECREATE(bounds, uint8, i+1);
+		}
+		else {
+			CREATE(durations, uint32, 1);
+			CREATE(bounds, uint8, 1);
+		}
+		durations[i] = cash_shop_items[tab].item[j]->duration;
+		bounds[i] = cash_shop_items[tab].item[j]->bound;
+#endif
 	}
 
 	if( ( totalweight + sd->weight ) > sd->max_weight ){
+		CASHSHOP_EXPAND_FREE()
 		clif_cashshop_result( sd, 0, CASHSHOP_RESULT_ERROR_INVENTORY_WEIGHT );
 		return false;
 	}else if( pc_inventoryblank( sd ) < new_ ){
+		CASHSHOP_EXPAND_FREE()
 		clif_cashshop_result( sd, 0, CASHSHOP_RESULT_ERROR_INVENTORY_ITEMCNT );
 		return false;
 	}
 
 	if(pc_paycash( sd, totalcash, kafrapoints, LOG_TYPE_CASH ) < 0){
+		CASHSHOP_EXPAND_FREE()
 		clif_cashshop_result( sd, 0, CASHSHOP_RESULT_ERROR_SHORTTAGE_CASH );
 		return false;
 	}
@@ -277,23 +338,35 @@ bool cashshop_buylist( struct map_session_data* sd, uint32 kafrapoints, int n, u
 
 			item_tmp.nameid = nameid;
 			item_tmp.identify = 1;
+#ifdef PROJECT_CASHSHOP_EXPAND
+			if (durations[i])
+				item_tmp.expire_time = (unsigned int)(time(NULL) + durations[i]);
+			item_tmp.bound = bounds[i];
+#endif
 
 			switch( pc_additem( sd, &item_tmp, quantity, LOG_TYPE_CASH ) ){
 				case ADDITEM_OVERWEIGHT:
+					CASHSHOP_EXPAND_FREE()
 					clif_cashshop_result( sd, nameid, CASHSHOP_RESULT_ERROR_INVENTORY_WEIGHT );
 					return false;
 				case ADDITEM_OVERITEM:
+					CASHSHOP_EXPAND_FREE()
 					clif_cashshop_result( sd, nameid, CASHSHOP_RESULT_ERROR_INVENTORY_ITEMCNT );
 					return false;
 				case ADDITEM_OVERAMOUNT:
+					CASHSHOP_EXPAND_FREE()
 					clif_cashshop_result( sd, nameid, CASHSHOP_RESULT_ERROR_OVER_PRODUCT_TOTAL_CNT );
 					return false;
 				case ADDITEM_STACKLIMIT:
+					CASHSHOP_EXPAND_FREE()
 					clif_cashshop_result( sd, nameid, CASHSHOP_RESULT_ERROR_RUNE_OVERCOUNT );
 					return false;
 			}
 		}
 	}
+
+	CASHSHOP_EXPAND_FREE()
+#undef CASHSHOP_EXPAND_FREE
 
 	clif_cashshop_result( sd, 0, CASHSHOP_RESULT_SUCCESS ); //Doesn't show any message?
 	return true;

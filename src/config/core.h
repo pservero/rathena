@@ -93,6 +93,11 @@
 	#define MAX_CHAR_VIP 0
 #endif
 
+/// Aditional Cash Shop item option [Cydh/PServeRO]:
+/// - ExpireDuration: Makes item as rental item
+/// - Bound: Makes item as bound item
+#define PROJECT_CASHSHOP_EXPAND
+
 /**
  * No settings past this point
  **/
