@@ -93,31 +93,13 @@
 	#define MAX_CHAR_VIP 0
 #endif
 
-/** Some Custom Source Configs by PServeRO **/
-/// Comment this to doesn't display map description when player changes map
-#define PROJECT_DISPLAY_MAP_DESC
-
-/// Global Damage Adjustment
-/// See conf/battle/pservero.conf and doc/mapflags.txt
-#define PROJECT_GLOBAL_DAMAGE_RATE
-
-/// Various map adjustment for skill variables in each map:
-/// - 'skill_maxcount'  : Change max count
-/// - 'skill_cast'      : Change variable cast time
-/// - 'skill_fixed_cast': Change fixed cast time
-/// - 'skill_actdelay'  : Change act delay
-/// - 'skill_walkdelay' : Change walk delay
-/// - 'skill_duration'  : Change duration
-/// - 'skill_duration2' : Change duration2
-/// - 'skill_cooldown'  : Change cooldown
-#define PROJECT_SKILL_MAP_ADJUSTMENT
-
 /**
  * No settings past this point
  **/
 #include "./renewal.h"
 #include "./secure.h"
 #include "./classes/general.h"
+#include "./pservero.h"
 
 /**
  * Constants come last; so they process anything that could've been modified in early includes
