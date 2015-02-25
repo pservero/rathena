@@ -23,6 +23,10 @@
 /// - 'skill_cooldown'  : Change cooldown
 #define PROJECT_SKILL_MAP_ADJUSTMENT
 
+/// Enable refine bonus [Cydh/PServeRO]
+/// See db/refine_bonus.txt for bonus configurations
+#define PROJECT_REFINE_BONUS
+
 /// Disable stat sending to stats.rathena.org
 #ifndef STATS_OPT_OUT
 #define STATS_OPT_OUT
