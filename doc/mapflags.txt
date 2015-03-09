@@ -396,3 +396,9 @@ in '/conf/channels.conf'.
 Disables MVP tombs from appearing on a map.
 
 ---------------------------------------
+
+*nobonedrop
+
+When 'bone_drop' is enabled, use this mapflag to prevent dropping bone at certain map.
+
+---------------------------------------

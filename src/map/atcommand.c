@@ -4066,6 +4066,8 @@ ACMD_FUNC(mapinfo) {
 		strcat(atcmd_output, " AllowKS |");
 	if (map[m_id].flag.reset)
 		strcat(atcmd_output, " Reset |");
+	if (map[m_id].flag.nobonedrop)
+		strcat(atcmd_output, " NoBoneDrop |");
 	clif_displaymessage(fd, atcmd_output);
 
 	strcpy(atcmd_output,msg_txt(sd,1051)); // Other Flags2:
@@ -7944,6 +7946,7 @@ ACMD_FUNC(mapflag) {
 #ifdef ADJUST_SKILL_DAMAGE
 		checkflag(skill_damage);
 #endif
+		checkflag(nobonedrop);
 		clif_displaymessage(sd->fd," ");
 		clif_displaymessage(sd->fd,msg_txt(sd,1312)); // Usage: "@mapflag monster_noteleport 1" (0=Off | 1=On)
 		clif_displaymessage(sd->fd,msg_txt(sd,1313)); // Type "@mapflag available" to list the available mapflags.
@@ -7968,6 +7971,7 @@ ACMD_FUNC(mapflag) {
 #ifdef ADJUST_SKILL_DAMAGE
 	setflag(skill_damage);
 #endif
+	setflag(nobonedrop);
 
 	clif_displaymessage(sd->fd,msg_txt(sd,1314)); // Invalid flag name or flag.
 	clif_displaymessage(sd->fd,msg_txt(sd,1312)); // Usage: "@mapflag monster_noteleport 1" (0=Off | 1=On)
@@ -7983,6 +7987,7 @@ ACMD_FUNC(mapflag) {
 #ifdef ADJUST_SKILL_DAMAGE
 	clif_displaymessage(sd->fd,"skill_damage");
 #endif
+	clif_displaymessage(sd->fd,"nobonedrop");
 
 #undef checkflag
 #undef setflag

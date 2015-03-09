@@ -685,6 +685,7 @@ struct map_data {
 #ifdef ADJUST_SKILL_DAMAGE
 		unsigned skill_damage : 1;
 #endif
+		unsigned nobonedrop: 1; ///< Prevent drop a bone if 'bone_drop' is enabled. [Cydh/PServeRO]
 	} flag;
 	struct point save;
 	struct npc_data *npc[MAX_NPC_PER_MAP];

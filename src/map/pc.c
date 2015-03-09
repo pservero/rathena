@@ -7411,6 +7411,7 @@ int pc_dead(struct map_session_data *sd,struct block_list *src)
 		}
 	}
 
+	if (!map[sd->bl.m].flag.nobonedrop)
 	if(battle_config.bone_drop==2
 		|| (battle_config.bone_drop==1 && map[sd->bl.m].flag.pvp))
 	{
