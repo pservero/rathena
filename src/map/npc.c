@@ -3771,6 +3771,8 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 		ShowInfo("npc_parse_mapflag: skill_damage: ADJUST_SKILL_DAMAGE is inactive (core.h). Skipping this mapflag..\n");
 #endif
 	}
+	else if (!strcmpi(w3,"nopetloot"))
+		map[m].flag.nopetloot = state;
 	else
 		ShowError("npc_parse_mapflag: unrecognized mapflag '%s' (file '%s', line '%d').\n", w3, filepath, strline(buffer,start-buffer));
 

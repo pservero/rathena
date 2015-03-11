@@ -411,6 +411,8 @@ enum {
 	MF_NOLOCKON,
 	MF_NOTOMB,
 	MF_SKILL_DAMAGE	//60
+
+	,MF_NOPETLOOT=91
 };
 
 const char* script_op2name(int op)
@@ -11359,6 +11361,7 @@ BUILDIN_FUNC(getmapflag)
 			case MF_NOMINEEFFECT:		script_pushint(st,map[m].flag.nomineeffect); break;
 			case MF_NOLOCKON:			script_pushint(st,map[m].flag.nolockon); break;
 			case MF_NOTOMB:				script_pushint(st,map[m].flag.notomb); break;
+			case MF_NOPETLOOT:			script_pushint(st,map[m].flag.nopetloot); break;
 #ifdef ADJUST_SKILL_DAMAGE
 			case MF_SKILL_DAMAGE:
 				{
@@ -11482,6 +11485,7 @@ BUILDIN_FUNC(setmapflag)
 			case MF_NOMINEEFFECT:		map[m].flag.nomineeffect = 1 ; break;
 			case MF_NOLOCKON:			map[m].flag.nolockon = 1 ; break;
 			case MF_NOTOMB:				map[m].flag.notomb = 1; break;
+			case MF_NOPETLOOT:			map[m].flag.nopetloot = 1; break;
 #ifdef ADJUST_SKILL_DAMAGE
 			case MF_SKILL_DAMAGE:
 				{
@@ -11593,6 +11597,7 @@ BUILDIN_FUNC(removemapflag)
 			case MF_NOMINEEFFECT:		map[m].flag.nomineeffect = 0 ; break;
 			case MF_NOLOCKON:			map[m].flag.nolockon = 0 ; break;
 			case MF_NOTOMB:				map[m].flag.notomb = 0; break;
+			case MF_NOPETLOOT:			map[m].flag.nopetloot = 0; break;
 #ifdef ADJUST_SKILL_DAMAGE
 			case MF_SKILL_DAMAGE:
 				{

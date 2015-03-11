@@ -682,6 +682,7 @@ struct map_data {
 		unsigned nomineeffect : 1; //allow /mineeffect
 		unsigned nolockon : 1;
 		unsigned notomb : 1;
+		unsigned nopetloot:1; ///< Prevent pet loot item in this map [Cydh/PServeRO]
 #ifdef ADJUST_SKILL_DAMAGE
 		unsigned skill_damage : 1;
 #endif
