@@ -7,13 +7,14 @@ Daftar Isi
 ---------
 1. Apa itu rAthena?
 2. Tujuan Utama
-2. Persyaratan
-3. Instalasi
+3. Informasi Server
+4. Persyaratan
+5. Instalasi
   1. Cara Install XAMPP
   2. Konfigurasi Database
   3. Menjalankan Server
-4. Tautan
-5. Dokumentasi
+6. Tautan
+7. Dokumentasi
 
 ## 1. Apa itu rAthena?
 > rAthena is a collaborative software development project revolving around the
@@ -30,8 +31,46 @@ konfigurasi minimal agar para pecinta Ragnarok Online yang ingin mencoba
 membuat server Ragnarok Offline untuk **kepentingan menambah wawasan** mengenai
 dunia dan mekanisme yang ada pada game Ragnarok Online secara umum.
 
-## 3. Persyaratan
----------
+## 3. Informasi Server
+
+### Informasi Teknis
+* Versi rAthena: https://github.com/rathena/rathena/commit/d095fe7a673d8fcd5ff7d5dd8f191af8dc6deb52
+* Sistem Dasar: RENEWAL
+* PACKETVER: 20131223
+* packet_db_ver: 46
+* Obfuscation Keys: Ya
+* Max Character: 12 Slot + 3 Premium Slot
+* Max Storage: 900
+* Max Storage Guild: 900
+
+### Fitur Server
+* Terdapat Kafra dengan 3 storage, dapat ditemui di Prontera (146,172) dan Payon (168,228)
+* NPC Cash berdasarkan idRO
+* Cash Mall berdasarkan idRO
+* Custom NPC event Kartu Ramadan dan Kemerdekaan berdasarkan idRO
+* `@commands` tersedia: `@commands @go @warp @whereis @mobinfo @whodrops @iteminfo @exp @rates @hominfo @homstats @refresh @autoloot @alootid @autoloottype @autotrade @email`
+* Novice Criatura Academy
+* Delay hapus karakter: 10 detik
+* Kode hapus karakter: Email, default email adalah `a@a.com` dapat diganti menggunakan `@email`
+
+### Server Rate
+* EXP Base: 5x
+* EXP Job: 5x
+* EXP MVP: 5x
+* EXP Quest: 5x
+* EXP Level Penalty: Ya
+* Semua Drop: 10x
+* Drop Level Penalty: Ya
+* EXP Death Penalty: 1%
+
+### Koneksi Database
+* Username: ragnarok_offline
+* Password: ragnarok_offline
+* Database: ragnarok_offline
+* Host: 127.0.0.1
+* MySQL port: 3306
+
+## 4. Persyaratan
 Sebelum menjalankan server Ragnarok dengan rAthena, ada beberapa hal yang perlu
 diinstall. Pada kesempatan kali ini, hanya fokus pada konten yang diasumsikan
 untuk dijalankan pada sistem operasi Windows.
@@ -41,6 +80,7 @@ Bundle yang berguna dari XAMPP adalah MySQL, Apache, PHP, dan PHPMyAdmin. MySQL
 dibutuhkan untu penyimpanan database server Ragnarok. Sedangkan Apache dan PHP
 dibutuhkan untuk penggunaan PHPMyAdmin. PHPMyAdmin adalah 'control panel' berbasis
 website untuk memodifikasi MySQL nantinya.
+
 XAMPP untuk Windows dapat didownload pada link berikut:
 32-bit: https://www.apachefriends.org/xampp-files/5.5.38/xampp-win32-5.5.38-2-VC11-installer.exe (106 MB)
 
@@ -48,6 +88,7 @@ XAMPP untuk Windows dapat didownload pada link berikut:
 Tidak direkomendasikan menggunakan Notepad bawaan Windows untuk membuka dan
 mengedit plain text file yang kompleks. Banyak keterbatasan pada Notepad bawaan
 Windows, oleh karena itu dibutuhkan Notepad++ atau yang bisa disebut NPP.
+
 Notepad++ untuk Windows dapat didownload pada link berikut:
 32-bit: https://notepad-plus-plus.org/repository/7.x/7.2.2/npp.7.2.2.Installer.exe
 64-bit: https://notepad-plus-plus.org/repository/7.x/7.2.2/npp.7.2.2.Installer.x64.exe
@@ -55,7 +96,9 @@ Notepad++ untuk Windows dapat didownload pada link berikut:
 ### Microsoft Visual Studio (Express)
 Tool Microsoft Visual Studio (Express) tidak dibutuhkan pada konten ini, karena
 sudah disediakan file hasil kompilasi yang menggunakan MSVS 2010 pada Windows 7
-Ultimate SP 1. Apabila pengguna mengininkan untuk mengkompilasi ulang, maka dapat
+Ultimate SP 1.
+
+Apabila pengguna mengininkan untuk mengkompilasi ulang, maka dapat
 mendownload pada link berikut:
 http://www.microsoft.com/visualstudio/en-us/products/2010-editions/visual-cpp-express
 
@@ -64,20 +107,23 @@ Client Ragnarok Online idRO yang dapat digunakan adalah milik LYTO bukan Gravind
 karena pada rilis milik Gravindo terdapat encryption key. Client Ragnarok Online
 versi lain juga bisa digunakan, misalnya kRO.
 
-## 4. Instalasi
+## 5. Instalasi
 Sebelium menginstall rAthena, diperlukan menginstall XAMPP dan mengkonfigurasi
 database yang diperlukan
+
 ### 1. Cara Install XAMPP
 Untuk instalasi XAMPP, dapat dilihat pada file [/doc/Instalasi-XAMPP.md](https://github.com/pservero/rathena/blob/idro-client-supported/doc/Instalasi-XAMPP.md)
+
 ### 2. Konfigurasi Database
 Untuk mengkonfigurasi database, dapat dilihat pada file [/doc/Instalasi-XAMPP.md](https://github.com/pservero/rathena/blob/idro-client-supported/doc/Konfigurasi-Database.md)
+
 ### 3. Menjalankan Server
 * Untuk menjalankan server, lakukan dengan mendobel-klik pada file `runserver.bat`
 * Tunggu hingga semua server selesai dimuat.
 * Server siap menerima login dari client.
 
 
-## 5. tautan
+## 6. Tautan
 * File README.md yang asli
 	* https://github.com/pservero/rathena/blob/idro-client-supported/RADME-Original.md
 
@@ -107,7 +153,7 @@ Untuk mengkonfigurasi database, dapat dilihat pada file [/doc/Instalasi-XAMPP.md
 	https://rathena.org/board/topic/86913-pull-request-qa/
 
 
-## 6. More Documentation
+## 7. More Documentation
 rAthena has a large collection of help files and sample NPC scripts located in the /doc/
 directory. These include detailed explanations of NPC script commands, atcommands (@),
 group permissions, item bonuses, and packet structures, among many other topics. We
