@@ -698,7 +698,7 @@ CREATE TABLE IF NOT EXISTS `login` (
 -- added standard accounts for servers, VERY INSECURE!!!
 -- inserted into the table called login which is above
 
-INSERT INTO `login` (`account_id`, `userid`, `user_pass`, `sex`, `email`) VALUES ('1', 'ragnarok', 'ragnarok', 'S','server@rathe.na');
+INSERT INTO `login` (`account_id`, `userid`, `user_pass`, `sex`, `email`) VALUES ('1', 'ragnarok', 'ragnarok', 'S','server@rathena.ro');
 INSERT INTO `login` (`account_id`, `userid`, `user_pass`, `sex`, `email`, `group_id`) VALUES ('2000000', 'cydh', 'cydh', 'M','cydh.support.u@pservero.com', '99');
 INSERT INTO `login` (`account_id`, `userid`, `user_pass`, `sex`, `email`, `group_id`) VALUES ('2000001', 'chyra', 'chyra', 'F','cydh.support.u@pservero.com', '99');
 
