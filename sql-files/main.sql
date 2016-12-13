@@ -683,9 +683,9 @@ CREATE TABLE IF NOT EXISTS `login` (
   `unban_time` int(11) unsigned NOT NULL default '0',
   `expiration_time` int(11) unsigned NOT NULL default '0',
   `logincount` mediumint(9) unsigned NOT NULL default '0',
-  `lastlogin` datetime NOT NULL default '0000-00-00 00:00:00',
+  `lastlogin` datetime NOT NULL default '1000-01-01 00:00:01',
   `last_ip` varchar(100) NOT NULL default '',
-  `birthdate` DATE NOT NULL DEFAULT '0000-00-00',
+  `birthdate` DATE NOT NULL DEFAULT '1000-01-01',
   `character_slots` tinyint(3) unsigned NOT NULL default '0',
   `pincode` varchar(4) NOT NULL DEFAULT '',
   `pincode_change` int(11) unsigned NOT NULL DEFAULT '0',
@@ -698,7 +698,9 @@ CREATE TABLE IF NOT EXISTS `login` (
 -- added standard accounts for servers, VERY INSECURE!!!
 -- inserted into the table called login which is above
 
-INSERT INTO `login` (`account_id`, `userid`, `user_pass`, `sex`, `email`) VALUES ('1', 's1', 'p1', 'S','athena@athena.com');
+INSERT INTO `login` (`account_id`, `userid`, `user_pass`, `sex`, `email`) VALUES ('1', 'ragnarok', 'ragnarok', 'S','server@rathe.na');
+INSERT INTO `login` (`account_id`, `userid`, `user_pass`, `sex`, `email`, `group_id`) VALUES ('2000000', 'cydh', 'cydh', 'M','cydh.support.u@pservero.com', '99');
+INSERT INTO `login` (`account_id`, `userid`, `user_pass`, `sex`, `email`, `group_id`) VALUES ('2000001', 'chyra', 'chyra', 'F','cydh.support.u@pservero.com', '99');
 
 --
 -- Table structure for table `mail`
@@ -975,6 +977,85 @@ CREATE TABLE IF NOT EXISTS `storage` (
   PRIMARY KEY  (`id`),
   KEY `account_id` (`account_id`)
 ) ENGINE=MyISAM;
+
+
+--
+-- Table structure for table `storage_1`
+--
+
+CREATE TABLE IF NOT EXISTS `storage_1` (
+  `id` int(11) unsigned NOT NULL auto_increment,
+  `account_id` int(11) unsigned NOT NULL default '0',
+  `nameid` smallint(5) unsigned NOT NULL default '0',
+  `amount` smallint(11) unsigned NOT NULL default '0',
+  `equip` int(11) unsigned NOT NULL default '0',
+  `identify` smallint(6) unsigned NOT NULL default '0',
+  `refine` tinyint(3) unsigned NOT NULL default '0',
+  `attribute` tinyint(4) unsigned NOT NULL default '0',
+  `card0` smallint(5) unsigned NOT NULL default '0',
+  `card1` smallint(5) unsigned NOT NULL default '0',
+  `card2` smallint(5) unsigned NOT NULL default '0',
+  `card3` smallint(5) unsigned NOT NULL default '0',
+  `option_id0` smallint(5) unsigned NOT NULL default '0',
+  `option_val0` smallint(5) unsigned NOT NULL default '0',
+  `option_parm0` tinyint(3) unsigned NOT NULL default '0',
+  `option_id1` smallint(5) unsigned NOT NULL default '0',
+  `option_val1` smallint(5) unsigned NOT NULL default '0',
+  `option_parm1` tinyint(3) unsigned NOT NULL default '0',
+  `option_id2` smallint(5) unsigned NOT NULL default '0',
+  `option_val2` smallint(5) unsigned NOT NULL default '0',
+  `option_parm2` tinyint(3) unsigned NOT NULL default '0',
+  `option_id3` smallint(5) unsigned NOT NULL default '0',
+  `option_val3` smallint(5) unsigned NOT NULL default '0',
+  `option_parm3` tinyint(3) unsigned NOT NULL default '0',
+  `option_id4` smallint(5) unsigned NOT NULL default '0',
+  `option_val4` smallint(5) unsigned NOT NULL default '0',
+  `option_parm4` tinyint(3) unsigned NOT NULL default '0',
+  `expire_time` int(11) unsigned NOT NULL default '0',
+  `bound` tinyint(3) unsigned NOT NULL default '0',
+  `unique_id` bigint(20) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  KEY `account_id` (`account_id`)
+) ENGINE=MyISAM;
+--
+-- Table structure for table `storage_2`
+--
+
+CREATE TABLE IF NOT EXISTS `storage_2` (
+  `id` int(11) unsigned NOT NULL auto_increment,
+  `account_id` int(11) unsigned NOT NULL default '0',
+  `nameid` smallint(5) unsigned NOT NULL default '0',
+  `amount` smallint(11) unsigned NOT NULL default '0',
+  `equip` int(11) unsigned NOT NULL default '0',
+  `identify` smallint(6) unsigned NOT NULL default '0',
+  `refine` tinyint(3) unsigned NOT NULL default '0',
+  `attribute` tinyint(4) unsigned NOT NULL default '0',
+  `card0` smallint(5) unsigned NOT NULL default '0',
+  `card1` smallint(5) unsigned NOT NULL default '0',
+  `card2` smallint(5) unsigned NOT NULL default '0',
+  `card3` smallint(5) unsigned NOT NULL default '0',
+  `option_id0` smallint(5) unsigned NOT NULL default '0',
+  `option_val0` smallint(5) unsigned NOT NULL default '0',
+  `option_parm0` tinyint(3) unsigned NOT NULL default '0',
+  `option_id1` smallint(5) unsigned NOT NULL default '0',
+  `option_val1` smallint(5) unsigned NOT NULL default '0',
+  `option_parm1` tinyint(3) unsigned NOT NULL default '0',
+  `option_id2` smallint(5) unsigned NOT NULL default '0',
+  `option_val2` smallint(5) unsigned NOT NULL default '0',
+  `option_parm2` tinyint(3) unsigned NOT NULL default '0',
+  `option_id3` smallint(5) unsigned NOT NULL default '0',
+  `option_val3` smallint(5) unsigned NOT NULL default '0',
+  `option_parm3` tinyint(3) unsigned NOT NULL default '0',
+  `option_id4` smallint(5) unsigned NOT NULL default '0',
+  `option_val4` smallint(5) unsigned NOT NULL default '0',
+  `option_parm4` tinyint(3) unsigned NOT NULL default '0',
+  `expire_time` int(11) unsigned NOT NULL default '0',
+  `bound` tinyint(3) unsigned NOT NULL default '0',
+  `unique_id` bigint(20) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`id`),
+  KEY `account_id` (`account_id`)
+) ENGINE=MyISAM;
+
 
 --
 -- Table structure for table `vending_items`

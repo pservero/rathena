@@ -1,0 +1,41 @@
+// MySQL Login server
+login_server_ip: 127.0.0.1
+login_server_port: 3306
+login_server_id: ragnarok_offline
+login_server_pw: ragnarok_offline
+login_server_db: ragnarok_offline
+login_codepage:
+login_case_sensitive: no
+
+ipban_db_ip: 127.0.0.1
+ipban_db_port: 3306
+ipban_db_id: ragnarok_offline
+ipban_db_pw: ragnarok_offline
+ipban_db_db: ragnarok_offline
+ipban_codepage:
+
+// MySQL Character server
+char_server_ip: 127.0.0.1
+char_server_port: 3306
+char_server_id: ragnarok_offline
+char_server_pw: ragnarok_offline
+char_server_db: ragnarok_offline
+
+// MySQL Map Server
+map_server_ip: 127.0.0.1
+map_server_port: 3306
+map_server_id: ragnarok_offline
+map_server_pw: ragnarok_offline
+map_server_db: ragnarok_offline
+
+// MySQL Log Database
+log_db_ip: 127.0.0.1
+log_db_port: 3306
+log_db_id: ragnarok_offline
+log_db_pw: ragnarok_offline
+log_db_db: ragnarok_offline
+log_codepage:
+log_login_db: loginlog
+
+// Read this inter_server.conf
+inter_server_conf: conf/import/inter_server.conf

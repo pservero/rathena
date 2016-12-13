@@ -1,0 +1,22 @@
+// The login server listens on the interface with this IP address.
+// NOTE: This allows you to run multiple servers on multiple interfaces
+// while using the same ports for each server.
+bind_ip: 127.0.0.1
+ 
+// Login Server Port
+login_port: 6900
+
+// Console Commands
+// Allow for console commands to be used on/off
+// This prevents usage of >& log.file
+console: on
+
+// Can you use _M/_F to make new accounts on the server?
+new_account: yes
+
+// What version is allowed to connect? (if the option above is enabled)
+client_version_to_connect: 46
+
+// Store passwords as MD5 hashes instead of plain text?
+// NOTE: Will not work with clients that use <passwordencrypt>
+use_MD5_passwords: no
