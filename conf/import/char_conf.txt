@@ -28,17 +28,6 @@ char_port: 6121
 // This prevents usage of >& log.file
 console: on
 
-// Starting point for new characters
-// Format: <map_name>,<x>,<y>{:<map_name>,<x>,<y>...}
-// Max number of start points is MAX_STARTPOINT in char.h (default 5)
-// Location is randomly picked on character creation.
-// NOTE: For Doram, this requires client 20151001 or newer.
-//start_point: prontera,156,191
-//start_point_pre: prontera,156,191
-start_point: izlude,205,210
-start_point_pre: new_1-1,53,111:new_2-1,53,111:new_3-1,53,111:new_4-1,53,111:new_5-1,53,111
-start_point_doram: lasa_fild01,48,297
-
 // Starting zeny for new characters
 start_zeny: 1000000
 

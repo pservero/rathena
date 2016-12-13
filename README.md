@@ -13,8 +13,9 @@ Daftar Isi
   1. Cara Install XAMPP
   2. Konfigurasi Database
   3. Menjalankan Server
-6. Tautan
-7. Dokumentasi
+6. Akun GM
+7. Tautan
+8. Dokumentasi
 
 ## 1. Apa itu rAthena?
 > rAthena is a collaborative software development project revolving around the
@@ -34,7 +35,7 @@ dunia dan mekanisme yang ada pada game Ragnarok Online secara umum.
 ## 3. Informasi Server
 
 ### Informasi Teknis
-* Versi rAthena: https://github.com/rathena/rathena/commit/d095fe7a673d8fcd5ff7d5dd8f191af8dc6deb52
+* Versi rAthena: Bisa dilihat pada [VERSION.md](https://github.com/pservero/rathena/blob/idro-client-supported/VERSION.md)
 * Sistem Dasar: RENEWAL
 * PACKETVER: 20131223
 * packet_db_ver: 46
@@ -77,12 +78,12 @@ untuk dijalankan pada sistem operasi Windows.
 
 ### XAMPP
 Bundle yang berguna dari XAMPP adalah MySQL, Apache, PHP, dan PHPMyAdmin. MySQL
-dibutuhkan untu penyimpanan database server Ragnarok. Sedangkan Apache dan PHP
+dibutuhkan untuk penyimpanan database server Ragnarok. Sedangkan Apache dan PHP
 dibutuhkan untuk penggunaan PHPMyAdmin. PHPMyAdmin adalah 'control panel' berbasis
 website untuk memodifikasi MySQL nantinya.
 
 XAMPP untuk Windows dapat didownload pada link berikut:
-32-bit: https://www.apachefriends.org/xampp-files/5.5.38/xampp-win32-5.5.38-2-VC11-installer.exe (106 MB)
+* 32-bit: https://www.apachefriends.org/xampp-files/5.5.38/xampp-win32-5.5.38-2-VC11-installer.exe (106 MB)
 
 ### Notepad++
 Tidak direkomendasikan menggunakan Notepad bawaan Windows untuk membuka dan
@@ -90,8 +91,8 @@ mengedit plain text file yang kompleks. Banyak keterbatasan pada Notepad bawaan
 Windows, oleh karena itu dibutuhkan Notepad++ atau yang bisa disebut NPP.
 
 Notepad++ untuk Windows dapat didownload pada link berikut:
-32-bit: https://notepad-plus-plus.org/repository/7.x/7.2.2/npp.7.2.2.Installer.exe
-64-bit: https://notepad-plus-plus.org/repository/7.x/7.2.2/npp.7.2.2.Installer.x64.exe
+* 32-bit: https://notepad-plus-plus.org/repository/7.x/7.2.2/npp.7.2.2.Installer.exe
+* 64-bit: https://notepad-plus-plus.org/repository/7.x/7.2.2/npp.7.2.2.Installer.x64.exe
 
 ### Microsoft Visual Studio (Express)
 Tool Microsoft Visual Studio (Express) tidak dibutuhkan pada konten ini, karena
@@ -123,7 +124,17 @@ Untuk mengkonfigurasi database, dapat dilihat pada file [/doc/Instalasi-XAMPP.md
 * Server siap menerima login dari client.
 
 
-## 6. Tautan
+## 6. Akun GM
+Untuk login menggunakan akun GM 'bawaan', gunakan username dan password berikut:
+* GM Male
+  * Username: cydh
+  * Password: cydh
+* GM Female
+  * Username: chyra
+  * Password: chyra
+
+
+## 7. Tautan
 * File README.md yang asli
 	* https://github.com/pservero/rathena/blob/idro-client-supported/RADME-Original.md
 
@@ -153,7 +164,7 @@ Untuk mengkonfigurasi database, dapat dilihat pada file [/doc/Instalasi-XAMPP.md
 	https://rathena.org/board/topic/86913-pull-request-qa/
 
 
-## 7. More Documentation
+## 8. More Documentation
 rAthena has a large collection of help files and sample NPC scripts located in the /doc/
 directory. These include detailed explanations of NPC script commands, atcommands (@),
 group permissions, item bonuses, and packet structures, among many other topics. We
