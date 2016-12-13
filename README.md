@@ -1,171 +1,81 @@
-rAthena
+# Ragnarok Server rAthena
 =======
 
 Build Status: [![Build Status](https://travis-ci.org/rathena/rathena.png?branch=master)](https://travis-ci.org/rathena/rathena) [![Build status](https://ci.appveyor.com/api/projects/status/8574b8nlwd57loda/branch/master?svg=true)](https://ci.appveyor.com/project/rAthenaAPI/rathena/branch/master)
 
-Table of Contents
+Daftar Isi
 ---------
-1. What is rAthena?
-2. Prerequisites
-3. Installation
-4. Troubleshooting
-5. Helpful Links
-6. More Documentation
-7. How to Contribute
+1. Apa itu rAthena?
+2. Tujuan Utama
+2. Persyaratan
+3. Instalasi
+  1. Cara Install XAMPP
+  2. Konfigurasi Database
+  3. Menjalankan Server
+4. Tautan
+5. Dokumentasi
 
-1. What is rAthena?
----------
-rAthena is a collaborative software development project revolving around the
+## 1. Apa itu rAthena?
+> rAthena is a collaborative software development project revolving around the
 creation of a robust massively multiplayer online role playing game (MMORPG)
 server package. Written in C, the program is very versatile and provides NPCs,
 warps and modifications. The project is jointly managed by a group of volunteers
 located around the world as well as a tremendous community providing QA and
 support. rAthena is a continuation of the eAthena project.
 
-2. Prerequisites
+## 2. Tujuan Utama
+Tujuan utama yang dimaksudkan adalah tujuan dari pembuatan konten/branch ini,
+bukan tujuan dari rAthena. Pada konten ini, bertujuan untuk menyediakan
+konfigurasi minimal agar para pecinta Ragnarok Online yang ingin mencoba
+membuat server Ragnarok Offline untuk **kepentingan menambah wawasan** mengenai
+dunia dan mekanisme yang ada pada game Ragnarok Online secara umum.
+
+## 3. Persyaratan
 ---------
-Before installing rAthena there are certain tools and applications you will need.
-This differs between the varying operating systems available, so the following
-is broken down into Windows and Linux prerequisites.
+Sebelum menjalankan server Ragnarok dengan rAthena, ada beberapa hal yang perlu
+diinstall. Pada kesempatan kali ini, hanya fokus pada konten yang diasumsikan
+untuk dijalankan pada sistem operasi Windows.
 
-* Windows
-	* MySQL ( http://www.mysql.com/downloads/mysql/ )
-	* MySQL Workbench ( http://www.mysql.com/downloads/workbench/ )
-	* MS Visual C++ ( http://www.microsoft.com/visualstudio/en-us/products/2010-editions/visual-cpp-express )
-	* TortoiseGIT ( http://code.google.com/p/tortoisegit/ )
-	* MSysGit ( http://msysgit.github.io/ or https://github.com/msysgit/git/releases )
+### XAMPP
+Bundle yang berguna dari XAMPP adalah MySQL, Apache, PHP, dan PHPMyAdmin. MySQL
+dibutuhkan untu penyimpanan database server Ragnarok. Sedangkan Apache dan PHP
+dibutuhkan untuk penggunaan PHPMyAdmin. PHPMyAdmin adalah 'control panel' berbasis
+website untuk memodifikasi MySQL nantinya.
+XAMPP untuk Windows dapat didownload pada link berikut:
+32-bit: https://www.apachefriends.org/xampp-files/5.5.38/xampp-win32-5.5.38-2-VC11-installer.exe (106 MB)
 
-* Linux (names of packages may require specific version numbers on certain distributions)
-	* gcc
-	* make
-	* mysql
-	* mysql-devel
-	* mysql-server
-	* pcre-devel
-	* zlib-devel
-	* git
+### Notepad++
+Tidak direkomendasikan menggunakan Notepad bawaan Windows untuk membuka dan
+mengedit plain text file ayng kompleks. Banyak keterbatasan pada Notepad bawaan
+Windows, oleh karena itu dibutuhkan Notepad++ atau yang bisa disebut NPP.
+Notepad++ untuk Windows dapat didownload pada link berikut:
+32-bit: https://notepad-plus-plus.org/repository/7.x/7.2.2/npp.7.2.2.Installer.exe
+64-bit: https://notepad-plus-plus.org/repository/7.x/7.2.2/npp.7.2.2.Installer.x64.exe
 
-3. Installation 
----------
-This section is a very brief set of installation instructions. For more concise guides
-relevant to your Operation System, please refer to the Wiki (links at the end of this file).
+### Microsoft Visual Studio (Express)
+Tool Microsoft Visual Studio (Express) tidak dibutuhkan pada konten ini, karena
+sudah disediakan file hasil kompilasi yang menggunakan MSVS 2010 pada Windows 7
+Ultimate SP 1. Apabila pengguna mengininkan untuk mengkompilasi ulang, maka dapat
+mendownload pada link berikut:
+http://www.microsoft.com/visualstudio/en-us/products/2010-editions/visual-cpp-express
 
-* Windows
-	* Install prerequisites
-	* Create a folder to download rAthena into (e.g. C:\rAthena)
-	* Right click this folder and select "Git Clone"
-	* Paste the GitHub URL into the box:
-
-				https://github.com/rathena/rathena.git
-				
-	* Open MySQL Workbench and create an instance to connect to your MySQL Server
-	* Create a database (rathena), a user (rathena), give permissions (GRANT SELECT,INSERT,UPDATE,DELETE)
-		and then login using the new user
-	* Use MySQL Workbench to run the .sql files in /sql-files/ on the new rathena database
-
-* Linux
-	* Type:
-		* (For CentOS)
-
-				yum install gcc make mysql mysql-devel mysql-server pcre-devel zlib-devel git
-		* (For Debian)
-
-				apt-get install git make gcc libmysqlclient-dev zlib1g-dev libpcre3-dev
-	* Type:
-
-				mysql_secure_installation
-	* Start your MySQL server
-	* Setup a MySQL user:
-
-				CREATE USER 'rathena'@'localhost' IDENTIFIED BY 'password';
-	* Assign permissions:
-
-				GRANT SELECT,INSERT,UPDATE,DELETE ON `rathena\_rag`.* TO 'rathena'@'localhost';
-	* Clone a GIT repository:
-
-				git clone https://github.com/rathena/rathena.git ~/rathena
-	* Insert SQL files:
-
-				mysql --user=root -p rathena_rag < trunk/sql-files/main.sql (and others)
-	* Configure and compile:
-
-				./configure && make clean && make server
-	* When you're ready, start the servers:
-
-				./athena-start start
-
-* Optional
-	* If you want to have your own forked version but still get updates from the main rAthena repository
-		* Fork this repository to your GitHub account
-		* List the current configured remote repository for your fork:
-		
-				git remote -v
-
-		* Specify a new remote upstream repository that will be synced with your fork:
-		
-				git remote add upstream https://github.com/rathena/rathena.git
-				
-		* Verify the new upstream repository you've specified for your fork:
-		
-				git remote -v
-				
-		* You should see the main rAthena repository as well as your forked repository
-		* Now, when you want to get updates from rAthena, simply do:
-		
-				git pull upstream master
-
-	* Remember that rAthena falls under [GNU GPLv3](https://github.com/rathena/rathena/blob/master/LICENSE).
-
-4. Troubleshooting
----------
-If you're having problems with starting your server, the first thing you should
-do is check what's happening on your consoles. More often that not, all support issues
-can be solved simply by looking at the error messages given.
-
-Examples:
-
-* You get an error on your map-server that looks something like this:
-
-			[Error]: npc_parsesrcfile: Unable to parse, probably a missing or extra TAB in 
-				file 'npc/custom/jobmaster.txt', line '17'. Skipping line...
-				* w1=prontera,153,193,6 script
-				* w2=Job Master
-				* w3=123,{
-				* w4=
-
-    If you look at the error, it's telling you that you're missing (or have an extra) TAB.
-		This is easily fixed by looking at this part of the error:
-
-				* w1=prontera,153,193,6 script
-
-	If there was a TAB where it's supposed to be, that line would have prontera,153,193,6 at w1
-		and 'script' at w2. As there's a space instead of a TAB, the two sections are read as a
-		single parameter.
-
-* You have a default user/password warning similar to the following:
-
-			[Warning]: Using the default user/password s1/p1 is NOT RECOMMENDED.
-			[Notice]: Please edit your 'login' table to create a proper inter-server user/pa
-			ssword (gender 'S')
-			[Notice]: and then edit your user/password in conf/map_athena.conf (or conf/impo
-			rt/map_conf.txt)
-
-    Relax. This is just indicating that you're using the default username and password. To
-		fix this, check over the part in the installation instructions relevant to the `login` table.
-	
-* Your map-server outputs the following:
-
-			[Error]: make_connection: connect failed (socket #2, error 10061: No connection
-			could be made because the target machine actively refused it.
-			)!
-
-    If this shows up on the map server, it generally means that there is no Char Server available
-		to accept the connection.
+## 4. Instalasi
+Sebelium menginstall rAthena, diperlukan menginstall XAMPP dan mengkonfigurasi
+database yang diperlukan
+### 1. Cara Install XAMPP
+Untuk instalasi XAMPP, dapat dilihat pada file [/doc/Instalasi-XAMPP.md](https://github.com/pservero/rathena/blob/idro-client-supported/doc/Instalasi-XAMPP.md)
+### 2. Konfigurasi Database
+Untuk mengkonfigurasi database, dapat dilihat pada file [/doc/Instalasi-XAMPP.md](https://github.com/pservero/rathena/blob/idro-client-supported/doc/Konfigurasi-Database.md)
+### 3. Menjalankan Server
+* Untuk menjalankan server, lakukan dengan mendobel-klik pada file `runserver.bat`
+* Tunggu hingga semua server selesai dimuat.
+* Server siap menerima login dari client.
 
 
+## 5. tautan
+* File README.md yang asli
+	* https://github.com/pservero/rathena/blob/idro-client-supported/RADME-Original.md
 
-5. Helpful Links
----------
 * rAthena Forums
 	* https://rathena.org/
 
@@ -192,14 +102,9 @@ Examples:
 	https://rathena.org/board/topic/86913-pull-request-qa/
 
 
-6. More Documentation
----------
+## 6. More Documentation
 rAthena has a large collection of help files and sample NPC scripts located in the /doc/
 directory. These include detailed explanations of NPC script commands, atcommands (@),
 group permissions, item bonuses, and packet structures, among many other topics. We
 recommend that all users take the time to look over this directory before asking for
 assistance elsewhere.
-
-7. How to Contribute
----------
-Details on how to contribute to rAthena can be found in [CONTRIBUTING.md](https://github.com/rathena/rathena/blob/master/.github/CONTRIBUTING.md)!
