@@ -1,1 +1,1 @@
-Versi rAthena: https://github.com/rathena/rathena/commit/d095fe7a673d8fcd5ff7d5dd8f191af8dc6deb52
+Versi rAthena: https://github.com/rathena/rathena/commit/6e9cd4404aaeb6b5c34e60ef34ee59cae7f9503f
