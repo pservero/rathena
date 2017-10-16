@@ -1,4 +1,0 @@
-// Because in pre-compiled servers, in mmo.h I defined packetver as
-// #define PACKETVER 20131223
-// Compatible with 2013-12-23c Ragexe
-packet_db_ver: 46
