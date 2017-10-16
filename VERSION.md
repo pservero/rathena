@@ -1,1 +1,2 @@
-Versi rAthena: https://github.com/rathena/rathena/commit/6e9cd4404aaeb6b5c34e60ef34ee59cae7f9503f
+Versi rAthena: https://github.com/rathena/rathena/commit/7991f47a01812276a7a5fa0353545f79f34da46f
+Date: 16 Oktober 2017

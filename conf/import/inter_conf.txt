@@ -36,6 +36,3 @@ log_db_pw: ragnarok_offline
 log_db_db: ragnarok_offline
 log_codepage:
 log_login_db: loginlog
-
-// Read this inter_server.conf
-inter_server_conf: conf/import/inter_server.conf
