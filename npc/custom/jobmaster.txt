@@ -549,14 +549,14 @@ OnInit:
 	.NPCName$ = "[Job Master]";
 	
 	// Settings
-	.ThirdClass = true;			// Enable third classes?
-	.RebirthClass = true;			// Enable rebirth classes?
-	.SecondExpanded = true;		// Enable new expanded second classes: Ex. Super Novice, Kagerou/Oboro, Rebellion?
+	.ThirdClass = false;			// Enable third classes?
+	.RebirthClass = false;			// Enable rebirth classes?
+	.SecondExpanded = false;		// Enable new expanded second classes: Ex. Super Novice, Kagerou/Oboro, Rebellion?
 	.BabyNovice = true;	// Enable Baby novice classes? Disable it if you like player must have parent to get job baby.
 	.BabyClass = true;				// Enable Baby classes?
-	.BabyThird = true;				// Enable Baby third classes?
-	.BabyExpanded = true;			// Enable Baby Expanded classes: Ex. Baby Ninja, Baby Taekwon, etc.
-	.BabySummoner = true;			// Enable Baby Summoner?
+	.BabyThird = false;				// Enable Baby third classes?
+	.BabyExpanded = false;			// Enable Baby Expanded classes: Ex. Baby Ninja, Baby Taekwon, etc.
+	.BabySummoner = false;			// Enable Baby Summoner?
 	.LastJob = true;				// Enforce linear class changes?
 	.SkillPointCheck = true;		// Force player to use up all skill points?
 	.Platinum = true;				// Get platinum skills automatically?
