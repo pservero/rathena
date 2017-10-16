@@ -38,7 +38,6 @@ dunia dan mekanisme yang ada pada game Ragnarok Online secara umum.
 * Versi rAthena: Bisa dilihat pada [VERSION.md](https://github.com/pservero/rathena/blob/idro-client-supported/VERSION.md)
 * Sistem Dasar: RENEWAL
 * PACKETVER: 20131223
-* packet_db_ver: 46
 * Obfuscation Keys: Ya
 * Max Character: 12 Slot + 3 Premium Slot
 * Max Storage: 900
